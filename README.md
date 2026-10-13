@@ -2,6 +2,8 @@
 
 Unreal Engine 5.8 C++ first-person project. The starter project currently uses the Unreal First Person template; the game design and extraction loop will be defined in subsequent setup steps.
 
+Source repository: [Karry2497/extraction-fps-2](https://github.com/Karry2497/extraction-fps-2) (private).
+
 ## Open the project
 
 Open [`extractionFPS.uproject`](extractionFPS.uproject) with Unreal Engine 5.8. The project uses the C++ First Person template and Epic's experimental Unreal MCP plugins (`ModelContextProtocol` and `AllToolsets`).
