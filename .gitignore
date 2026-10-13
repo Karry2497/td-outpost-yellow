@@ -1,0 +1,29 @@
+# Unreal Engine generated files
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+.vs/
+.idea/
+.vscode/
+Config/DefaultEditorPerProjectUserSettings.ini
+
+# Generated IDE/project files
+*.sln
+*.slnx
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.VC.opendb
+*.user
+*.userprefs
+*.log
+
+# Operating system noise
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Local editor/session data
+*.code-workspace

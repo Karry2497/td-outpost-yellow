@@ -1,0 +1,21 @@
+#!/bin/sh
+
+# Keep Git LFS post-commit behavior when using this shared hooks directory.
+git lfs post-commit "$@"
+
+# Push each completed local commit to its matching remote branch.
+branch=$(git symbolic-ref --quiet --short HEAD) || {
+  echo "Auto-push skipped: HEAD is detached."
+  exit 0
+}
+
+if ! git remote get-url origin >/dev/null 2>&1; then
+  echo "Auto-push skipped: no 'origin' remote is configured."
+  exit 0
+fi
+
+if git rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
+  git push || echo "Auto-push failed; the local commit is still saved."
+else
+  git push --set-upstream origin "$branch" || echo "Auto-push failed; the local commit is still saved."
+fi
