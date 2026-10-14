@@ -228,17 +228,9 @@ def main():
                 outpost_mat,
             )
 
-    firing_positions = (-1200.0, -600.0, 0.0, 600.0, 1200.0)
-    for side, y in (("south", -compound_half - walk_width / 2.0 + 60.0),):
-        for pos in firing_positions:
-            if pos == 0.0:
-                continue  # leave the south stair clear
-            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), pos, y, walk_top + 80.0, 260.0, 120.0, 160.0, outpost_mat)
-    for side, x in (("west", -compound_half - walk_width / 2.0 + 60.0), ("east", compound_half + walk_width / 2.0 - 60.0)):
-        for pos in firing_positions:
-            if pos == 0.0:
-                continue  # leave room for the side staircase
-            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), x, pos, walk_top + 80.0, 120.0, 260.0, 160.0, outpost_mat)
+    # Keep the road-facing firing edges completely open. High merlons blocked
+    # the player's aim from the wall-top walk; the continuous wall below forms
+    # the outpost perimeter without covering the elevated firing positions.
 
     # Smaller, more natural treads lead from separate courtyard lanes to each
     # firing wall. Keeping them offset leaves the middle of the courtyard open.
