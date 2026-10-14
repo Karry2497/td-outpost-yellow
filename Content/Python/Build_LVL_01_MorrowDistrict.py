@@ -194,7 +194,9 @@ def main():
     # The open outpost occupies the old intersection and blocks all three roads.
     # Its complete wall seals the courtyard; connected buildings close the flanks.
     wall_height = 620.0
-    wall_thickness = 300.0
+    # Fill the complete wall-top walk footprint down to ground level. A narrow
+    # wall under a wide walk left a sheltered cavity where zombies could hide.
+    wall_thickness = walk_width
     wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, outpost_mat, wall_thickness)
     wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, outpost_mat, wall_thickness)
     # Define the long side walls directly in world X/Y dimensions. This keeps
@@ -236,7 +238,9 @@ def main():
     # firing wall. Keeping them offset leaves the middle of the courtyard open.
     stair_count = 40
     stair_width = 180.0
-    stair_run = compound_half / stair_count
+    # Stop each stair at the inner face of the now-solid wall instead of
+    # running into its filled footprint.
+    stair_run = (compound_half - wall_thickness / 2.0) / stair_count
     stair_rise = walk_top / stair_count
     for i in range(stair_count):
         step_center_z = stair_rise * (i + 0.5)
