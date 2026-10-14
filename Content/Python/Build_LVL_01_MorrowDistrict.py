@@ -68,7 +68,7 @@ def wall(mesh, label, x, y, z, length, height, yaw, concrete):
     return box(mesh, label, x, y, z, length, 30.0, height, concrete, yaw)
 
 
-def building(mesh, label, x, y, width, depth, floors, concrete, interior):
+def building(mesh, label, x, y, width, depth, floors, concrete, interior, glass):
     """Create a hollow, enterable shell with doors centered on two sides."""
     floor_height = 360.0
     height = floors * floor_height
@@ -88,6 +88,21 @@ def building(mesh, label, x, y, width, depth, floors, concrete, interior):
 
     # Roof slabs are low enough for the template's standard jump to reach.
     box(mesh, label + " / roof", x, y, height + 20.0, width, depth, 40.0, concrete)
+
+    # Dark glass panes are deliberately simple blockout windows. Their shallow
+    # boxes sit on the four facades and make every storey readable at a distance.
+    for floor in range(floors):
+        window_z = floor * floor_height + 205.0
+        for side, yy in (("south", y - half_d - 12.0), ("north", y + half_d + 12.0)):
+            for index in range(3):
+                wx = x + (index - 1) * min(760.0, width / 4.0)
+                if floor == 0 and index == 1:
+                    continue  # keep the ground-floor doorway clear
+                box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), wx, yy, window_z, 210.0, 24.0, 150.0, glass)
+        for side, xx, yaw in (("west", x - half_w - 12.0, 90.0), ("east", x + half_w + 12.0, 90.0)):
+            for index in range(2):
+                wy = y + (index - 0.5) * min(900.0, depth / 3.0)
+                box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), xx, wy, window_z, 210.0, 24.0, 150.0, glass, yaw)
 
     # A few internal partitions create short sightlines and combat cover.
     if width > 2800.0:
@@ -122,6 +137,7 @@ def main():
     cover_mat = make_color_material("M_Blockout_Cover", (0.42, 0.31, 0.19, 1.0))
     objective_mat = make_color_material("M_Blockout_Objective", (0.08, 0.42, 0.48, 1.0))
     extract_mat = make_color_material("M_Blockout_Extraction", (0.16, 0.50, 0.20, 1.0))
+    glass_mat = make_color_material("M_Blockout_Window", (0.035, 0.10, 0.14, 1.0))
 
     # A 240 x 200 m playable district; the raised perimeter stops accidental exits.
     box(cube, "Blockout / base", 0.0, 0.0, -100.0, 24000.0, 20000.0, 200.0, pavement)
@@ -144,13 +160,27 @@ def main():
         road(cube, "Sidewalk / avenue " + str(side), side * 1150.0, 0.0, 19000.0, 500.0, 90.0, pavement)
 
     # Enterable district buildings leave streets and service alleys open.
-    building(cube, "Market / west shops", -7000.0, -3400.0, 4200.0, 3600.0, 2, concrete, interior)
-    building(cube, "Market / east shops", -2400.0, -3400.0, 3600.0, 3600.0, 2, concrete, interior)
-    building(cube, "Clinic / south wing", 3100.0, -3300.0, 4200.0, 3800.0, 2, concrete, interior)
-    building(cube, "Apartments / west block", -6900.0, 3600.0, 4000.0, 4200.0, 3, concrete, interior)
-    building(cube, "Apartments / mid block", -2700.0, 3900.0, 3300.0, 4200.0, 3, concrete, interior)
-    building(cube, "Clinic / north wing", 2900.0, 3500.0, 4000.0, 3800.0, 2, concrete, interior)
-    building(cube, "Warehouse / north block", 8100.0, 3500.0, 3600.0, 4200.0, 2, concrete, interior)
+    building(cube, "Market / west shops", -7000.0, -3400.0, 4200.0, 3600.0, 3, concrete, interior, glass_mat)
+    building(cube, "Market / east shops", -2400.0, -3400.0, 3600.0, 3600.0, 3, concrete, interior, glass_mat)
+    building(cube, "Clinic / south wing", 3100.0, -3300.0, 4200.0, 3800.0, 3, concrete, interior, glass_mat)
+    building(cube, "Apartments / west block", -6900.0, 3600.0, 4000.0, 4200.0, 3, concrete, interior, glass_mat)
+    building(cube, "Apartments / mid block", -2700.0, 3900.0, 3300.0, 4200.0, 3, concrete, interior, glass_mat)
+    building(cube, "Clinic / north wing", 2900.0, 3500.0, 4000.0, 3800.0, 3, concrete, interior, glass_mat)
+    building(cube, "Warehouse / north block", 8100.0, 3500.0, 3600.0, 4200.0, 3, concrete, interior, glass_mat)
+
+    # A sealed 30 x 30 m defensive compound sits directly on the four-way
+    # intersection. The solid perimeter is a zombie barrier in this greybox;
+    # a player-operated gate can replace its south wall in the gate iteration.
+    compound_half = 1500.0
+    wall_height = 620.0
+    wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete)
+    wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete)
+    wall(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete)
+    wall(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete)
+    for i, (x, y) in enumerate(((-compound_half, -compound_half), (-compound_half, compound_half), (compound_half, -compound_half), (compound_half, compound_half))):
+        box(cube, "Outpost / corner tower %d" % (i + 1), x, y, 420.0, 420.0, 420.0, 840.0, concrete)
+    building(cube, "Outpost / command post", 0.0, 0.0, 1200.0, 1400.0, 3, concrete, interior, glass_mat)
+    box(cube, "Outpost / objective beacon", 0.0, 0.0, 1100.0, 500.0, 300.0, 160.0, objective_mat)
 
     # Waist-high cover shapes support readable first-person firefights.
     for i, (x, y) in enumerate(((-5200, -7000), (-1500, -7000), (2700, -7000), (5200, -2400), (-4600, 2200), (4500, 5400), (9500, 1700))):
@@ -192,7 +222,7 @@ def main():
 
     level_editor.save_current_level()
     unreal.EditorAssetLibrary.save_directory("/Game/Maps", only_if_is_dirty=False, recursive=True)
-    unreal.log("Created LVL_01_MorrowDistrict with urban routes, interior shells, objective, extraction and player start")
+    unreal.log("Created LVL_01_MorrowDistrict with three-storey windowed buildings, a sealed central outpost, objective, extraction and player start")
 
 
 main()

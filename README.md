@@ -12,7 +12,7 @@ The Unreal MCP server runs inside the editor on `http://127.0.0.1:8000/mcp`. Kee
 
 ## First level
 
-The game and editor default map is [`LVL_01_MorrowDistrict`](Content/Maps/LVL_01_MorrowDistrict.umap), a city-district greybox with alternate routes, a clinic cache landmark and an extraction zone. Its layout and regeneration script are documented in [`docs/levels/LEVEL_01_MORROW_DISTRICT.md`](docs/levels/LEVEL_01_MORROW_DISTRICT.md).
+The game and editor default map is [`LVL_01_MorrowDistrict`](Content/Maps/LVL_01_MorrowDistrict.umap), a city-district greybox with three-storey windowed buildings, a sealed fortified outpost centered at the main intersection, alternate routes, a clinic cache landmark and an extraction zone. Its layout and regeneration script are documented in [`docs/levels/LEVEL_01_MORROW_DISTRICT.md`](docs/levels/LEVEL_01_MORROW_DISTRICT.md).
 
 To transfer the native level and its materials to another UE5 project, use the [Morrow District import package](Exports/LVL_01_MorrowDistrict_UE5_Import.zip). Extract it at the target project root so its `Content` directory merges into the target `Content` directory, then open `/Game/Maps/LVL_01_MorrowDistrict` in Unreal Editor. The attached project already contains this level and opens on it by default.
 

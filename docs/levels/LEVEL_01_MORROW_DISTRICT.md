@@ -16,8 +16,9 @@ First playable greybox for the extraction-focused FPS. This establishes one comp
 - Playable footprint: 240 m east-west by 200 m north-south.
 - Primary lanes: insertion street, market street and north-south avenue.
 - Secondary lanes: west and east service alleys, with short sidewalk routes along the main streets.
-- Landmarks: market shops, clinic, three apartment blocks, north warehouse, clinic cache and extraction shelter.
+- Landmarks: three-storey windowed shops, clinic and apartments; a fortified outpost centered on the main intersection; the clinic cache and extraction shelter.
 - Combat spaces: open junction, street barriers, crate stacks, hollow building shells, short interior partitions and low roofs.
+- The outpost has a continuous 6.2 m solid perimeter wall and four corner towers. The current greybox keeps the wall sealed so it physically blocks zombie entry; a player-operated gate is a later gameplay iteration.
 
 ## Acceptance criteria for this slice
 
@@ -25,6 +26,8 @@ First playable greybox for the extraction-focused FPS. This establishes one comp
 - A PlayerStart is placed at the insertion end.
 - The clinic cache and extraction zone are easy to distinguish by material color.
 - At least two alternate routes connect the market area with the extraction approach.
+- All district buildings have three visible storeys and dark blockout window panes.
+- The outpost is centered at the four-way intersection and enclosed by a continuous collision wall.
 - No imported art, gameplay system, or online dependency is required for the blockout.
 
 ## Build
