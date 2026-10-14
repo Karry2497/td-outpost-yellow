@@ -12,7 +12,7 @@ import math
 import unreal
 
 
-LEVEL_PATH = "/Game/Maps/LVL_01_MorrowDistrict"
+LEVEL_PATH = "/Game/Maps/LVL_01_MorrowDistrict_Refined"
 MATERIAL_PATH = "/Game/Maps/Materials"
 
 
@@ -148,11 +148,11 @@ def main():
         raise RuntimeError("Unreal basic shape meshes could not be loaded")
 
     concrete = make_color_material("M_Blockout_Concrete", (0.24, 0.28, 0.30, 1.0))
+    outpost_mat = make_color_material("M_Blockout_OutpostMasonry", (0.30, 0.22, 0.15, 1.0))
     asphalt = make_color_material("M_Blockout_Asphalt", (0.10, 0.12, 0.13, 1.0))
     pavement = make_color_material("M_Blockout_Pavement", (0.38, 0.39, 0.36, 1.0))
     interior = make_color_material("M_Blockout_Interior", (0.30, 0.31, 0.28, 1.0))
     cover_mat = make_color_material("M_Blockout_Cover", (0.42, 0.31, 0.19, 1.0))
-    objective_mat = make_color_material("M_Blockout_Objective", (0.08, 0.42, 0.48, 1.0))
     glass_mat = make_color_material("M_Blockout_Window", (0.035, 0.10, 0.14, 1.0))
     rust = make_color_material("M_Blockout_RustedMetal", (0.22, 0.12, 0.075, 1.0))
 
@@ -195,19 +195,19 @@ def main():
     # Its complete wall seals the courtyard; connected buildings close the flanks.
     wall_height = 620.0
     wall_thickness = 300.0
-    wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete, wall_thickness)
-    wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete, wall_thickness)
-    wall(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete, wall_thickness)
-    wall(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete, wall_thickness)
+    wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, outpost_mat, wall_thickness)
+    wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, outpost_mat, wall_thickness)
+    wall(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, outpost_mat, wall_thickness)
+    wall(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, outpost_mat, wall_thickness)
 
     # A connected firing walk reaches the three road-facing walls. The rear
     # section joins the ring to keep the walk connected but has no firing merlons.
     walk_thickness = 80.0
     walk_top = wall_height + walk_thickness
     for side, y in (("south", -compound_half), ("north", compound_half)):
-        box(cube, "Outpost / firing walk " + side, 0.0, y, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, concrete)
+        box(cube, "Outpost / firing walk " + side, 0.0, y, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, outpost_mat)
     for side, x in (("west", -compound_half), ("east", compound_half)):
-        box(cube, "Outpost / firing walk " + side, x, 0.0, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, concrete, 90.0)
+        box(cube, "Outpost / firing walk " + side, x, 0.0, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, outpost_mat, 90.0)
 
     # Fill the four ground-level corner gaps between wall ends and buildings.
     # These pads meet the firing walk at its outer corners without covering it.
@@ -223,7 +223,7 @@ def main():
                 corner_fill,
                 corner_fill,
                 walk_top,
-                concrete,
+                outpost_mat,
             )
 
     firing_positions = (-1200.0, -600.0, 0.0, 600.0, 1200.0)
@@ -231,31 +231,29 @@ def main():
         for pos in firing_positions:
             if pos == 0.0:
                 continue  # leave the south stair clear
-            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), pos, y, walk_top + 80.0, 260.0, 120.0, 160.0, concrete)
+            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), pos, y, walk_top + 80.0, 260.0, 120.0, 160.0, outpost_mat)
     for side, x in (("west", -compound_half - walk_width / 2.0 + 60.0), ("east", compound_half + walk_width / 2.0 - 60.0)):
         for pos in firing_positions:
             if pos == 0.0:
                 continue  # leave room for the side staircase
-            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), x, pos, walk_top + 80.0, 260.0, 120.0, 160.0, concrete, 90.0)
+            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), x, pos, walk_top + 80.0, 260.0, 120.0, 160.0, outpost_mat, 90.0)
 
-    # Three stepped approaches lead from the open courtyard to the firing walk.
-    stair_count = 12
-    stair_run = (compound_half * 2.0) / stair_count
+    # Smaller, more natural treads lead from separate courtyard lanes to each
+    # firing wall. Keeping them offset leaves the middle of the courtyard open.
+    stair_count = 40
+    stair_width = 180.0
+    stair_run = compound_half / stair_count
     stair_rise = walk_top / stair_count
     for i in range(stair_count):
         step_center_z = stair_rise * (i + 0.5)
         inward = stair_run * (i + 0.5)
-        box(cube, "Outpost / stair south %02d" % (i + 1), 0.0, -inward, step_center_z, 380.0, stair_run, stair_rise, concrete)
-        box(cube, "Outpost / stair west %02d" % (i + 1), -inward, 0.0, step_center_z, stair_run, 380.0, stair_rise, concrete)
-        box(cube, "Outpost / stair east %02d" % (i + 1), inward, 0.0, step_center_z, stair_run, 380.0, stair_rise, concrete)
+        box(cube, "Outpost / stair south %02d" % (i + 1), -900.0, -inward, step_center_z, stair_width, stair_run, stair_rise, outpost_mat)
+        box(cube, "Outpost / stair west %02d" % (i + 1), -inward, 900.0, step_center_z, stair_run, stair_width, stair_rise, outpost_mat)
+        box(cube, "Outpost / stair east %02d" % (i + 1), inward, -900.0, step_center_z, stair_run, stair_width, stair_rise, outpost_mat)
 
     # Road debris and waist-high cover sit on the abandoned approaches.
     for i, (x, y) in enumerate(((-2800, 720), (-4400, -650), (3000, -700), (4600, 640), (-650, -3300), (600, -4700))):
         cover(cube, "Cover / road rubble %02d" % (i + 1), x, y, 420.0, 360.0, 180.0, cover_mat)
-
-    # A visible landmark marks the outpost as the zombie-control checkpoint.
-    box(cube, "Objective / zombie count console", 0.0, 0.0, 70.0, 180.0, 180.0, 140.0, objective_mat)
-    box(cube, "Objective / console plinth", 0.0, 0.0, 15.0, 420.0, 420.0, 30.0, concrete)
 
     # A simple daylight rig keeps the greybox readable without baked lighting.
     sun = unreal.EditorLevelLibrary.spawn_actor_from_class(
