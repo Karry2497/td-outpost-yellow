@@ -7,6 +7,8 @@ The script intentionally uses engine primitive meshes so the level does not
 depend on external art packs.
 """
 
+import math
+
 import unreal
 
 
@@ -113,11 +115,20 @@ def cover(mesh, label, x, y, width, depth, height, material):
     return box(mesh, label, x, y, height / 2.0, width, depth, height, material)
 
 
-def traffic_signal(mesh, label, x, y, yaw, housing, red, amber, green):
-    box(mesh, label + " / pole", x, y, 230.0, 45.0, 45.0, 460.0, housing)
-    box(mesh, label + " / housing", x, y, 520.0, 110.0, 100.0, 260.0, housing, yaw)
-    for name, z, material in (("red", 600.0, red), ("amber", 520.0, amber), ("green", 440.0, green)):
-        box(mesh, label + " / " + name, x, y, z, 58.0, 112.0, 58.0, material, yaw)
+def wrecked_car(mesh, label, x, y, yaw, rust, glass, concrete):
+    """Create a stationary, visibly damaged car from simple blockout meshes."""
+    box(mesh, label + " / bent body", x, y, 72.0, 500.0, 220.0, 120.0, rust, yaw)
+    box(mesh, label + " / crushed cabin", x + math.cos(math.radians(yaw)) * 15.0, y + math.sin(math.radians(yaw)) * 15.0, 174.0, 245.0, 175.0, 88.0, rust, yaw - 5.0)
+    box(mesh, label + " / shattered windscreen", x + math.cos(math.radians(yaw)) * 105.0, y + math.sin(math.radians(yaw)) * 105.0, 177.0, 105.0, 145.0, 12.0, glass, yaw)
+
+    for dx, dy in ((-165.0, -125.0), (-165.0, 125.0), (165.0, -125.0), (165.0, 125.0)):
+        angle = math.radians(yaw)
+        wheel_x = x + dx * math.cos(angle) - dy * math.sin(angle)
+        wheel_y = y + dx * math.sin(angle) + dy * math.cos(angle)
+        box(mesh, label + " / damaged tire", wheel_x, wheel_y, 48.0, 104.0, 70.0, 88.0, concrete, yaw)
+
+    # A twisted bonnet and scattered concrete chunks sell the abandoned state.
+    box(mesh, label + " / folded bonnet", x - math.cos(math.radians(yaw)) * 175.0, y - math.sin(math.radians(yaw)) * 175.0, 112.0, 180.0, 215.0, 32.0, concrete, yaw + 12.0)
 
 
 def main():
@@ -133,8 +144,7 @@ def main():
         raise RuntimeError("Could not create level: " + LEVEL_PATH)
 
     cube = unreal.load_asset("/Engine/BasicShapes/Cube.Cube")
-    cylinder = unreal.load_asset("/Engine/BasicShapes/Cylinder.Cylinder")
-    if not cube or not cylinder:
+    if not cube:
         raise RuntimeError("Unreal basic shape meshes could not be loaded")
 
     concrete = make_color_material("M_Blockout_Concrete", (0.24, 0.28, 0.30, 1.0))
@@ -143,11 +153,8 @@ def main():
     interior = make_color_material("M_Blockout_Interior", (0.30, 0.31, 0.28, 1.0))
     cover_mat = make_color_material("M_Blockout_Cover", (0.42, 0.31, 0.19, 1.0))
     objective_mat = make_color_material("M_Blockout_Objective", (0.08, 0.42, 0.48, 1.0))
-    extract_mat = make_color_material("M_Blockout_Extraction", (0.16, 0.50, 0.20, 1.0))
     glass_mat = make_color_material("M_Blockout_Window", (0.035, 0.10, 0.14, 1.0))
-    signal_red = make_color_material("M_Blockout_SignalRed", (0.75, 0.035, 0.025, 1.0))
-    signal_amber = make_color_material("M_Blockout_SignalAmber", (0.95, 0.42, 0.025, 1.0))
-    signal_green = make_color_material("M_Blockout_SignalGreen", (0.04, 0.68, 0.08, 1.0))
+    rust = make_color_material("M_Blockout_RustedMetal", (0.22, 0.12, 0.075, 1.0))
 
     # A 240 x 200 m playable district; the raised perimeter stops accidental exits.
     box(cube, "Blockout / base", 0.0, 0.0, -100.0, 24000.0, 20000.0, 200.0, pavement)
@@ -156,31 +163,28 @@ def main():
     for y in (-10000.0, 10000.0):
         box(cube, "Blockout / perimeter north-south", 0.0, y, 400.0, 24000.0, 300.0, 800.0, concrete)
 
-    # Asphalt routes connect the insertion street, market junction and extraction.
-    road(cube, "Road / insertion street", -5000.0, -7600.0, 14000.0, 1600.0, 0.0, asphalt)
-    road(cube, "Road / market street", 0.0, 0.0, 22000.0, 1800.0, 0.0, asphalt)
-    # The avenue ends at the east-west road, leaving a three-arm T-junction.
-    road(cube, "Road / south approach", 0.0, -4750.0, 9500.0, 1800.0, 90.0, asphalt)
-    road(cube, "Road / west service alley", -10000.0, 1000.0, 16500.0, 900.0, 90.0, asphalt)
-    road(cube, "Road / east service alley", 10600.0, 1500.0, 15500.0, 1000.0, 90.0, asphalt)
-    road(cube, "Road / north extraction approach", 0.0, 7300.0, 22000.0, 1300.0, 0.0, asphalt)
-
-    # Walkable sidewalks parallel to the primary streets.
-    for side in (-1.0, 1.0):
-        road(cube, "Sidewalk / market " + str(side), 0.0, side * 1150.0, 22000.0, 500.0, 0.0, pavement)
-        road(cube, "Sidewalk / south approach " + str(side), side * 1150.0, -4750.0, 9500.0, 500.0, 90.0, pavement)
-
-    # Enterable district buildings leave streets and service alleys open.
-    building(cube, "Market / west shops", -7000.0, -3400.0, 4200.0, 3600.0, 3, concrete, interior, glass_mat)
-    building(cube, "Market / east shops", -2400.0, -3400.0, 3600.0, 3600.0, 3, concrete, interior, glass_mat)
-    building(cube, "Clinic / south wing", 3100.0, -3300.0, 4200.0, 3800.0, 3, concrete, interior, glass_mat)
-    building(cube, "Apartments / west block", -6900.0, 3600.0, 4000.0, 4200.0, 3, concrete, interior, glass_mat)
-    building(cube, "Outpost / rear support building", 0.0, 4300.0, 8300.0, 1600.0, 3, concrete, interior, glass_mat)
-    building(cube, "Warehouse / north block", 8100.0, 3500.0, 3600.0, 4200.0, 3, concrete, interior, glass_mat)
-
-    # The open outpost yard sits at the center of the three-arm intersection.
-    # Its continuous wall and connected firing walk are tall zombie barriers.
+    # The former streets now stop at the outpost walls. There is no road through
+    # the courtyard and no fourth road arm behind the connected rear buildings.
     compound_half = 1500.0
+    road(cube, "Road / west dead-end approach", -6825.0, 0.0, 10350.0, 1800.0, 0.0, asphalt)
+    road(cube, "Road / east dead-end approach", 6825.0, 0.0, 10350.0, 1800.0, 0.0, asphalt)
+    road(cube, "Road / south dead-end approach", 0.0, -5825.0, 8350.0, 1800.0, 90.0, asphalt)
+
+    # Three-storey building masses meet the compound at every rear and side
+    # edge, so there is no alley for zombies or players to use as a bypass.
+    building(cube, "District / northwest connected block", -6825.0, 5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
+    building(cube, "District / northeast connected block", 6825.0, 5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
+    building(cube, "District / southwest connected block", -6825.0, -5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
+    building(cube, "District / southeast connected block", 6825.0, -5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
+    building(cube, "Outpost / attached rear support building", 0.0, 2550.0, 3300.0, 1800.0, 3, concrete, interior, glass_mat)
+
+    # Abandoned wrecks are static blockout props; no vehicles are in operation.
+    wrecked_car(cube, "Wreck / west approach", -5800.0, 220.0, 0.0, rust, glass_mat, concrete)
+    wrecked_car(cube, "Wreck / east approach", 5800.0, -240.0, 0.0, rust, glass_mat, concrete)
+    wrecked_car(cube, "Wreck / south approach", -260.0, -5650.0, 90.0, rust, glass_mat, concrete)
+
+    # The open outpost occupies the old intersection and blocks all three roads.
+    # Its complete wall seals the courtyard; connected buildings close the flanks.
     wall_height = 620.0
     wall_thickness = 300.0
     wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete, wall_thickness)
@@ -188,8 +192,8 @@ def main():
     wall(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete, wall_thickness)
     wall(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete, wall_thickness)
 
-    # A continuous raised firing walk runs around all four sides, with spaced
-    # merlons for cover and gaps to shoot through. There are no towers or roof.
+    # A connected firing walk reaches the three road-facing walls. The rear
+    # section joins the ring to keep the walk connected but has no firing merlons.
     walk_width = 800.0
     walk_thickness = 80.0
     walk_top = wall_height + walk_thickness
@@ -199,10 +203,10 @@ def main():
         box(cube, "Outpost / firing walk " + side, x, 0.0, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, concrete, 90.0)
 
     firing_positions = (-1200.0, -600.0, 0.0, 600.0, 1200.0)
-    for side, y in (("south", -compound_half - walk_width / 2.0 + 60.0), ("north", compound_half + walk_width / 2.0 - 60.0)):
+    for side, y in (("south", -compound_half - walk_width / 2.0 + 60.0),):
         for pos in firing_positions:
-            if side == "south" and pos == 0.0:
-                continue  # leave room for the south staircase
+            if pos == 0.0:
+                continue  # leave the south stair clear
             box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), pos, y, walk_top + 80.0, 260.0, 120.0, 160.0, concrete)
     for side, x in (("west", -compound_half - walk_width / 2.0 + 60.0), ("east", compound_half + walk_width / 2.0 - 60.0)):
         for pos in firing_positions:
@@ -221,21 +225,13 @@ def main():
         box(cube, "Outpost / stair west %02d" % (i + 1), -inward, 0.0, step_center_z, stair_run, 380.0, stair_rise, concrete)
         box(cube, "Outpost / stair east %02d" % (i + 1), inward, 0.0, step_center_z, stair_run, 380.0, stair_rise, concrete)
 
-    # Three visible signals mark the west, east and south arms of the T-junction.
-    for label, x, y, yaw in (("west arm", -2200.0, 0.0, 90.0), ("east arm", 2200.0, 0.0, 90.0), ("south arm", 0.0, -2200.0, 0.0)):
-        traffic_signal(cube, "Traffic light / " + label, x, y, yaw, asphalt, signal_red, signal_amber, signal_green)
+    # Road debris and waist-high cover sit on the abandoned approaches.
+    for i, (x, y) in enumerate(((-2800, 720), (-4400, -650), (3000, -700), (4600, 640), (-650, -3300), (600, -4700))):
+        cover(cube, "Cover / road rubble %02d" % (i + 1), x, y, 420.0, 360.0, 180.0, cover_mat)
 
-    # Waist-high cover shapes support readable first-person firefights.
-    for i, (x, y) in enumerate(((-5200, -7000), (-1500, -7000), (2700, -7000), (5200, -2400), (-4600, 2200), (4500, 5400), (9500, 1700))):
-        cover(cube, "Cover / road barrier %02d" % (i + 1), x, y, 260.0, 900.0, 120.0, cover_mat)
-    for i, (x, y) in enumerate(((-9000, 500), (-7600, 500), (-9000, 7500), (5700, 6000))):
-        cover(cube, "Cover / crate stack %02d" % (i + 1), x, y, 180.0, 180.0, 160.0, cover_mat)
-
-    # Mission landmarks are deliberately simple, visible blockout markers.
-    box(cube, "Objective / clinic data cache", 3600.0, -1600.0, 70.0, 180.0, 180.0, 140.0, objective_mat)
-    box(cube, "Objective / cache plinth", 3600.0, -1600.0, 15.0, 420.0, 420.0, 30.0, concrete)
-    spawn_mesh(cylinder, "Extraction / zone marker", (8200.0, 7300.0, 15.0), (8.0, 8.0, 0.30), material=extract_mat)
-    cover(cube, "Extraction / shelter", 9200.0, 7300.0, 900.0, 220.0, 240.0, concrete)
+    # A visible landmark marks the outpost as the zombie-control checkpoint.
+    box(cube, "Objective / zombie count console", 0.0, 0.0, 70.0, 180.0, 180.0, 140.0, objective_mat)
+    box(cube, "Objective / console plinth", 0.0, 0.0, 15.0, 420.0, 420.0, 30.0, concrete)
 
     # A simple daylight rig keeps the greybox readable without baked lighting.
     sun = unreal.EditorLevelLibrary.spawn_actor_from_class(
@@ -250,9 +246,9 @@ def main():
     sky.light_component.set_editor_property("source_type", unreal.SkyLightSourceType.SLS_CAPTURED_SCENE)
     sky.light_component.recapture_sky()
 
-    # Spawn faces toward the market street and the first combat space.
+    # Start safely inside the courtyard so the player can reach the three stairs.
     start = unreal.EditorLevelLibrary.spawn_actor_from_class(
-        unreal.PlayerStart, unreal.Vector(-9000.0, -7600.0, 120.0), unreal.Rotator(0.0, 0.0, 0.0)
+        unreal.PlayerStart, unreal.Vector(0.0, -600.0, 120.0), unreal.Rotator(0.0, -90.0, 0.0)
     )
     start.set_actor_label("Insertion / PlayerStart")
 
@@ -265,7 +261,7 @@ def main():
 
     level_editor.save_current_level()
     unreal.EditorAssetLibrary.save_directory("/Game/Maps", only_if_is_dirty=True, recursive=True)
-    unreal.log("Created LVL_01_MorrowDistrict with a three-arm T-junction, an open walled outpost with connected firing walks and three stairs, and a long rear building")
+    unreal.log("Created LVL_01_MorrowDistrict with a road-blocking outpost, three dead-end approaches, wrecked cars, three firing-wall stairs and buildings connected around the rear and sides")
 
 
 main()
