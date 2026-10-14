@@ -8,7 +8,11 @@ Source repository: [Karry2497/extraction-fps-2](https://github.com/Karry2497/ext
 
 Open [`extractionFPS.uproject`](extractionFPS.uproject) with Unreal Engine 5.8. The project uses the C++ First Person template and Epic's experimental Unreal MCP plugins (`ModelContextProtocol` and `AllToolsets`).
 
-The Unreal MCP server runs inside the editor on `http://127.0.0.1:8000/mcp`. Keep the editor open while using MCP. It is configured in Codex as `unreal-mcp`.
+The Unreal MCP server runs inside the editor on `http://127.0.0.1:8000/mcp`. Keep the editor open while using MCP. It is configured in Codex as `unreal-mcp`. The Python Editor Script Plugin is enabled for the level-generation tools under `Content/Python`.
+
+## First level
+
+The game and editor default map is [`LVL_01_MorrowDistrict`](Content/Maps/LVL_01_MorrowDistrict.umap), a city-district greybox with alternate routes, a clinic cache landmark and an extraction zone. Its layout and regeneration script are documented in [`docs/levels/LEVEL_01_MORROW_DISTRICT.md`](docs/levels/LEVEL_01_MORROW_DISTRICT.md).
 
 ## Repository setup
 
