@@ -12,7 +12,7 @@ import math
 import unreal
 
 
-LEVEL_PATH = "/Game/Maps/LVL_01_MorrowDistrict_Refined"
+LEVEL_PATH = "/Game/Maps/LVL_01_MorrowDistrict_Walled"
 MATERIAL_PATH = "/Game/Maps/Materials"
 
 
@@ -197,8 +197,10 @@ def main():
     wall_thickness = 300.0
     wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, outpost_mat, wall_thickness)
     wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, outpost_mat, wall_thickness)
-    wall(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, outpost_mat, wall_thickness)
-    wall(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, outpost_mat, wall_thickness)
+    # Define the long side walls directly in world X/Y dimensions. This keeps
+    # their 30 m runs along Y and avoids relying on rotated component scaling.
+    box(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, wall_thickness, compound_half * 2.0, wall_height, outpost_mat)
+    box(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, wall_thickness, compound_half * 2.0, wall_height, outpost_mat)
 
     # A connected firing walk reaches the three road-facing walls. The rear
     # section joins the ring to keep the walk connected but has no firing merlons.
@@ -207,7 +209,7 @@ def main():
     for side, y in (("south", -compound_half), ("north", compound_half)):
         box(cube, "Outpost / firing walk " + side, 0.0, y, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, outpost_mat)
     for side, x in (("west", -compound_half), ("east", compound_half)):
-        box(cube, "Outpost / firing walk " + side, x, 0.0, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, outpost_mat, 90.0)
+        box(cube, "Outpost / firing walk " + side, x, 0.0, wall_height + walk_thickness / 2.0, walk_width, compound_half * 2.0 + walk_width, walk_thickness, outpost_mat)
 
     # Fill the four ground-level corner gaps between wall ends and buildings.
     # These pads meet the firing walk at its outer corners without covering it.
@@ -236,7 +238,7 @@ def main():
         for pos in firing_positions:
             if pos == 0.0:
                 continue  # leave room for the side staircase
-            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), x, pos, walk_top + 80.0, 260.0, 120.0, 160.0, outpost_mat, 90.0)
+            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), x, pos, walk_top + 80.0, 120.0, 260.0, 160.0, outpost_mat)
 
     # Smaller, more natural treads lead from separate courtyard lanes to each
     # firing wall. Keeping them offset leaves the middle of the courtyard open.

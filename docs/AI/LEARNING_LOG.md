@@ -12,3 +12,4 @@ Add a short entry only when an iteration produces a specific, repeatable lesson 
 - Keep surrounding building footprints outside the full wall-top walk footprint, including its corners; close the ground-level bypass gaps with corner infill that ends at the walk surface so it does not obstruct the firing route.
 - Give the outpost walls and firing walk their own blockout material so the defensive perimeter remains readable against large surrounding building masses in an overhead editor view.
 - Size stair runs from the courtyard center to one wall (`compound_half`), not across the entire courtyard; for the 7 m wall walk, 40 treads yield roughly 17.5 cm rise and 37.5 cm depth.
+- For axis-aligned perimeter walls, specify their world-space width and depth directly instead of combining rotated actors with component world scaling; verify the rendered side spans from the courtyard view.

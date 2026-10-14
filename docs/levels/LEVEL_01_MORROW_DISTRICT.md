@@ -22,8 +22,8 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 
 ## Acceptance criteria for this slice
 
-- `LVL_01_MorrowDistrict_Refined` exists under `/Game/Maps` and opens as the project default level.
-- `LVL_01_MorrowDistrict_Refined` opens with PlayerStart inside the outpost courtyard.
+- `LVL_01_MorrowDistrict_Walled` exists under `/Game/Maps` and opens as the project default level.
+- `LVL_01_MorrowDistrict_Walled` opens with PlayerStart inside the outpost courtyard.
 - Three visible road stubs reach the outpost from the west, east and south, then stop at its walls.
 - No road or traversable gap runs through or around the outpost; building masses and sealed corner blocks close its rear and sides without covering the firing walls or walk.
 - Each of the three road-facing shooting walls has one stair from the courtyard to the connected wall-top walk.
@@ -35,6 +35,6 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 
 ## Build
 
-Open the project in Unreal Editor with the Python Editor Script Plugin enabled, then run `Content/Python/Build_LVL_01_MorrowDistrict.py` in the Python console. Re-running the script regenerates the refined level and its blockout materials.
+Open the project in Unreal Editor with the Python Editor Script Plugin enabled, then run `Content/Python/Build_LVL_01_MorrowDistrict.py` in the Python console. Re-running the script regenerates the walled level and its blockout materials.
 
 This is a greybox slice. Zombie spawning, counting, combat logic, extraction interactions, final art, lighting and playtest tuning remain subsequent iterations.
