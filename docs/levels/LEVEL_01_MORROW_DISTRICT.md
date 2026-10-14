@@ -14,11 +14,12 @@ First playable greybox for the extraction-focused FPS. This establishes one comp
 ## Greybox footprint
 
 - Playable footprint: 240 m east-west by 200 m north-south.
-- Primary lanes: insertion street, market street and north-south avenue.
+- Primary lanes: insertion street, market street and the south approach that terminates at a three-arm T-junction.
 - Secondary lanes: west and east service alleys, with short sidewalk routes along the main streets.
-- Landmarks: three-storey windowed shops, clinic and apartments; a fortified outpost centered on the main intersection; the clinic cache and extraction shelter.
+- Landmarks: three-storey windowed shops, clinic and apartments; a fortified outpost centered on the T-junction; a long three-storey support building behind it; the clinic cache and extraction shelter.
 - Combat spaces: open junction, street barriers, crate stacks, hollow building shells, short interior partitions and low roofs.
-- The outpost has a continuous 6.2 m solid perimeter wall and four corner towers. The current greybox keeps the wall sealed so it physically blocks zombie entry; a player-operated gate is a later gameplay iteration.
+- The intersection has three arms (west, east and south) and visible traffic signals; there is no northbound road continuing through the junction.
+- The outpost is an open courtyard with a continuous 6.2 m solid wall, a connected firing walk with gaps between cover merlons, and three interior stairways to the wall top. It has no center building, roof or corner towers.
 
 ## Acceptance criteria for this slice
 
@@ -27,7 +28,8 @@ First playable greybox for the extraction-focused FPS. This establishes one comp
 - The clinic cache and extraction zone are easy to distinguish by material color.
 - At least two alternate routes connect the market area with the extraction approach.
 - All district buildings have three visible storeys and dark blockout window panes.
-- The outpost is centered at the four-way intersection and enclosed by a continuous collision wall.
+- The outpost is centered at the three-arm junction; its wall-top firing walk connects continuously around the corners.
+- Three stairways connect the courtyard to the connected wall walk; no towers or roof cover the courtyard.
 - No imported art, gameplay system, or online dependency is required for the blockout.
 
 ## Build

@@ -64,8 +64,8 @@ def road(mesh, label, x, y, length, width, yaw, asphalt):
     return box(mesh, label, x, y, -15.0, length, width, 30.0, asphalt, yaw)
 
 
-def wall(mesh, label, x, y, z, length, height, yaw, concrete):
-    return box(mesh, label, x, y, z, length, 30.0, height, concrete, yaw)
+def wall(mesh, label, x, y, z, length, height, yaw, concrete, thickness=30.0):
+    return box(mesh, label, x, y, z, length, thickness, height, concrete, yaw)
 
 
 def building(mesh, label, x, y, width, depth, floors, concrete, interior, glass):
@@ -113,6 +113,13 @@ def cover(mesh, label, x, y, width, depth, height, material):
     return box(mesh, label, x, y, height / 2.0, width, depth, height, material)
 
 
+def traffic_signal(mesh, label, x, y, yaw, housing, red, amber, green):
+    box(mesh, label + " / pole", x, y, 230.0, 45.0, 45.0, 460.0, housing)
+    box(mesh, label + " / housing", x, y, 520.0, 110.0, 100.0, 260.0, housing, yaw)
+    for name, z, material in (("red", 600.0, red), ("amber", 520.0, amber), ("green", 440.0, green)):
+        box(mesh, label + " / " + name, x, y, z, 58.0, 112.0, 58.0, material, yaw)
+
+
 def main():
     level_editor = unreal.get_editor_subsystem(unreal.LevelEditorSubsystem)
     actor_editor = unreal.get_editor_subsystem(unreal.EditorActorSubsystem)
@@ -138,6 +145,9 @@ def main():
     objective_mat = make_color_material("M_Blockout_Objective", (0.08, 0.42, 0.48, 1.0))
     extract_mat = make_color_material("M_Blockout_Extraction", (0.16, 0.50, 0.20, 1.0))
     glass_mat = make_color_material("M_Blockout_Window", (0.035, 0.10, 0.14, 1.0))
+    signal_red = make_color_material("M_Blockout_SignalRed", (0.75, 0.035, 0.025, 1.0))
+    signal_amber = make_color_material("M_Blockout_SignalAmber", (0.95, 0.42, 0.025, 1.0))
+    signal_green = make_color_material("M_Blockout_SignalGreen", (0.04, 0.68, 0.08, 1.0))
 
     # A 240 x 200 m playable district; the raised perimeter stops accidental exits.
     box(cube, "Blockout / base", 0.0, 0.0, -100.0, 24000.0, 20000.0, 200.0, pavement)
@@ -149,7 +159,8 @@ def main():
     # Asphalt routes connect the insertion street, market junction and extraction.
     road(cube, "Road / insertion street", -5000.0, -7600.0, 14000.0, 1600.0, 0.0, asphalt)
     road(cube, "Road / market street", 0.0, 0.0, 22000.0, 1800.0, 0.0, asphalt)
-    road(cube, "Road / north-south avenue", 0.0, 0.0, 19000.0, 1800.0, 90.0, asphalt)
+    # The avenue ends at the east-west road, leaving a three-arm T-junction.
+    road(cube, "Road / south approach", 0.0, -4750.0, 9500.0, 1800.0, 90.0, asphalt)
     road(cube, "Road / west service alley", -10000.0, 1000.0, 16500.0, 900.0, 90.0, asphalt)
     road(cube, "Road / east service alley", 10600.0, 1500.0, 15500.0, 1000.0, 90.0, asphalt)
     road(cube, "Road / north extraction approach", 0.0, 7300.0, 22000.0, 1300.0, 0.0, asphalt)
@@ -157,30 +168,62 @@ def main():
     # Walkable sidewalks parallel to the primary streets.
     for side in (-1.0, 1.0):
         road(cube, "Sidewalk / market " + str(side), 0.0, side * 1150.0, 22000.0, 500.0, 0.0, pavement)
-        road(cube, "Sidewalk / avenue " + str(side), side * 1150.0, 0.0, 19000.0, 500.0, 90.0, pavement)
+        road(cube, "Sidewalk / south approach " + str(side), side * 1150.0, -4750.0, 9500.0, 500.0, 90.0, pavement)
 
     # Enterable district buildings leave streets and service alleys open.
     building(cube, "Market / west shops", -7000.0, -3400.0, 4200.0, 3600.0, 3, concrete, interior, glass_mat)
     building(cube, "Market / east shops", -2400.0, -3400.0, 3600.0, 3600.0, 3, concrete, interior, glass_mat)
     building(cube, "Clinic / south wing", 3100.0, -3300.0, 4200.0, 3800.0, 3, concrete, interior, glass_mat)
     building(cube, "Apartments / west block", -6900.0, 3600.0, 4000.0, 4200.0, 3, concrete, interior, glass_mat)
-    building(cube, "Apartments / mid block", -2700.0, 3900.0, 3300.0, 4200.0, 3, concrete, interior, glass_mat)
-    building(cube, "Clinic / north wing", 2900.0, 3500.0, 4000.0, 3800.0, 3, concrete, interior, glass_mat)
+    building(cube, "Outpost / rear support building", 0.0, 4300.0, 8300.0, 1600.0, 3, concrete, interior, glass_mat)
     building(cube, "Warehouse / north block", 8100.0, 3500.0, 3600.0, 4200.0, 3, concrete, interior, glass_mat)
 
-    # A sealed 30 x 30 m defensive compound sits directly on the four-way
-    # intersection. The solid perimeter is a zombie barrier in this greybox;
-    # a player-operated gate can replace its south wall in the gate iteration.
+    # The open outpost yard sits at the center of the three-arm intersection.
+    # Its continuous wall and connected firing walk are tall zombie barriers.
     compound_half = 1500.0
     wall_height = 620.0
-    wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete)
-    wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete)
-    wall(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete)
-    wall(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete)
-    for i, (x, y) in enumerate(((-compound_half, -compound_half), (-compound_half, compound_half), (compound_half, -compound_half), (compound_half, compound_half))):
-        box(cube, "Outpost / corner tower %d" % (i + 1), x, y, 420.0, 420.0, 420.0, 840.0, concrete)
-    building(cube, "Outpost / command post", 0.0, 0.0, 1200.0, 1400.0, 3, concrete, interior, glass_mat)
-    box(cube, "Outpost / objective beacon", 0.0, 0.0, 1100.0, 500.0, 300.0, 160.0, objective_mat)
+    wall_thickness = 300.0
+    wall(cube, "Outpost / perimeter south", 0.0, -compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete, wall_thickness)
+    wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, concrete, wall_thickness)
+    wall(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete, wall_thickness)
+    wall(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, compound_half * 2.0, wall_height, 90.0, concrete, wall_thickness)
+
+    # A continuous raised firing walk runs around all four sides, with spaced
+    # merlons for cover and gaps to shoot through. There are no towers or roof.
+    walk_width = 800.0
+    walk_thickness = 80.0
+    walk_top = wall_height + walk_thickness
+    for side, y in (("south", -compound_half), ("north", compound_half)):
+        box(cube, "Outpost / firing walk " + side, 0.0, y, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, concrete)
+    for side, x in (("west", -compound_half), ("east", compound_half)):
+        box(cube, "Outpost / firing walk " + side, x, 0.0, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, concrete, 90.0)
+
+    firing_positions = (-1200.0, -600.0, 0.0, 600.0, 1200.0)
+    for side, y in (("south", -compound_half - walk_width / 2.0 + 60.0), ("north", compound_half + walk_width / 2.0 - 60.0)):
+        for pos in firing_positions:
+            if side == "south" and pos == 0.0:
+                continue  # leave room for the south staircase
+            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), pos, y, walk_top + 80.0, 260.0, 120.0, 160.0, concrete)
+    for side, x in (("west", -compound_half - walk_width / 2.0 + 60.0), ("east", compound_half + walk_width / 2.0 - 60.0)):
+        for pos in firing_positions:
+            if pos == 0.0:
+                continue  # leave room for the side staircase
+            box(cube, "Outpost / %s firing merlon %d" % (side, int(pos)), x, pos, walk_top + 80.0, 260.0, 120.0, 160.0, concrete, 90.0)
+
+    # Three stepped approaches lead from the open courtyard to the firing walk.
+    stair_count = 12
+    stair_run = (compound_half * 2.0) / stair_count
+    stair_rise = walk_top / stair_count
+    for i in range(stair_count):
+        step_center_z = stair_rise * (i + 0.5)
+        inward = stair_run * (i + 0.5)
+        box(cube, "Outpost / stair south %02d" % (i + 1), 0.0, -inward, step_center_z, 380.0, stair_run, stair_rise, concrete)
+        box(cube, "Outpost / stair west %02d" % (i + 1), -inward, 0.0, step_center_z, stair_run, 380.0, stair_rise, concrete)
+        box(cube, "Outpost / stair east %02d" % (i + 1), inward, 0.0, step_center_z, stair_run, 380.0, stair_rise, concrete)
+
+    # Three visible signals mark the west, east and south arms of the T-junction.
+    for label, x, y, yaw in (("west arm", -2200.0, 0.0, 90.0), ("east arm", 2200.0, 0.0, 90.0), ("south arm", 0.0, -2200.0, 0.0)):
+        traffic_signal(cube, "Traffic light / " + label, x, y, yaw, asphalt, signal_red, signal_amber, signal_green)
 
     # Waist-high cover shapes support readable first-person firefights.
     for i, (x, y) in enumerate(((-5200, -7000), (-1500, -7000), (2700, -7000), (5200, -2400), (-4600, 2200), (4500, 5400), (9500, 1700))):
@@ -221,8 +264,8 @@ def main():
     nav.set_actor_scale3d(unreal.Vector(120.0, 100.0, 20.0))
 
     level_editor.save_current_level()
-    unreal.EditorAssetLibrary.save_directory("/Game/Maps", only_if_is_dirty=False, recursive=True)
-    unreal.log("Created LVL_01_MorrowDistrict with three-storey windowed buildings, a sealed central outpost, objective, extraction and player start")
+    unreal.EditorAssetLibrary.save_directory("/Game/Maps", only_if_is_dirty=True, recursive=True)
+    unreal.log("Created LVL_01_MorrowDistrict with a three-arm T-junction, an open walled outpost with connected firing walks and three stairs, and a long rear building")
 
 
 main()
