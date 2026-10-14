@@ -166,17 +166,25 @@ def main():
     # The former streets now stop at the outpost walls. There is no road through
     # the courtyard and no fourth road arm behind the connected rear buildings.
     compound_half = 1500.0
+    walk_width = 800.0
     road(cube, "Road / west dead-end approach", -6825.0, 0.0, 10350.0, 1800.0, 0.0, asphalt)
     road(cube, "Road / east dead-end approach", 6825.0, 0.0, 10350.0, 1800.0, 0.0, asphalt)
     road(cube, "Road / south dead-end approach", 0.0, -5825.0, 8350.0, 1800.0, 90.0, asphalt)
 
-    # Three-storey building masses meet the compound at every rear and side
-    # edge, so there is no alley for zombies or players to use as a bypass.
-    building(cube, "District / northwest connected block", -6825.0, 5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
-    building(cube, "District / northeast connected block", 6825.0, 5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
-    building(cube, "District / southwest connected block", -6825.0, -5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
-    building(cube, "District / southeast connected block", 6825.0, -5825.0, 10350.0, 8350.0, 3, concrete, interior, glass_mat)
-    building(cube, "Outpost / attached rear support building", 0.0, 2550.0, 3300.0, 1800.0, 3, concrete, interior, glass_mat)
+    # Three-storey blocks seal the district around the compound, but their
+    # inner corners align with the outer edge of the firing walk. This keeps
+    # the west/east walls and the connected walk fully exposed and traversable.
+    block_inner_edge = compound_half + walk_width / 2.0
+    block_width = 12000.0 - block_inner_edge
+    block_depth = 10000.0 - block_inner_edge
+    block_x = (12000.0 + block_inner_edge) / 2.0
+    block_y = (10000.0 + block_inner_edge) / 2.0
+    building(cube, "District / northwest connected block", -block_x, block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
+    building(cube, "District / northeast connected block", block_x, block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
+    building(cube, "District / southwest connected block", -block_x, -block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
+    building(cube, "District / southeast connected block", block_x, -block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
+    rear_depth = 2000.0
+    building(cube, "Outpost / attached rear support building", 0.0, block_inner_edge + rear_depth / 2.0, width=3800.0, depth=rear_depth, floors=3, concrete=concrete, interior=interior, glass=glass_mat)
 
     # Abandoned wrecks are static blockout props; no vehicles are in operation.
     wrecked_car(cube, "Wreck / west approach", -5800.0, 220.0, 0.0, rust, glass_mat, concrete)
@@ -194,13 +202,29 @@ def main():
 
     # A connected firing walk reaches the three road-facing walls. The rear
     # section joins the ring to keep the walk connected but has no firing merlons.
-    walk_width = 800.0
     walk_thickness = 80.0
     walk_top = wall_height + walk_thickness
     for side, y in (("south", -compound_half), ("north", compound_half)):
         box(cube, "Outpost / firing walk " + side, 0.0, y, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, concrete)
     for side, x in (("west", -compound_half), ("east", compound_half)):
         box(cube, "Outpost / firing walk " + side, x, 0.0, wall_height + walk_thickness / 2.0, compound_half * 2.0 + walk_width, walk_width, walk_thickness, concrete, 90.0)
+
+    # Fill the four ground-level corner gaps between wall ends and buildings.
+    # These pads meet the firing walk at its outer corners without covering it.
+    corner_fill = walk_width / 2.0
+    for sx in (-1.0, 1.0):
+        for sy in (-1.0, 1.0):
+            box(
+                cube,
+                "Outpost / sealed corner %s %s" % ("east" if sx > 0 else "west", "north" if sy > 0 else "south"),
+                sx * (compound_half + corner_fill / 2.0),
+                sy * (compound_half + corner_fill / 2.0),
+                walk_top / 2.0,
+                corner_fill,
+                corner_fill,
+                walk_top,
+                concrete,
+            )
 
     firing_positions = (-1200.0, -600.0, 0.0, 600.0, 1200.0)
     for side, y in (("south", -compound_half - walk_width / 2.0 + 60.0),):

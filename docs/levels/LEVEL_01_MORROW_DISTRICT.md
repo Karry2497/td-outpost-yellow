@@ -15,7 +15,7 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 
 - Playable footprint: 240 m east-west by 200 m north-south.
 - Primary lanes: three abandoned road approaches from the west, east and south. Each ends at an outpost wall; none passes through or around the courtyard.
-- Buildings: three-storey windowed blocks touch the outpost along the rear and sides, sealing the gaps around its perimeter. A connected rear support building closes the northern edge.
+- Buildings: three-storey windowed blocks border the outer edge of the firing walk along the rear and sides. Their corners leave the full west and east walls and the connected walk exposed; sealed corner blocks close ground-level bypass gaps. A connected rear support building closes the northern edge without blocking the walk.
 - Wreckage: damaged, stationary cars and rubble sit on the approach roads. No traffic or moving vehicles are present.
 - The outpost occupies the old T-junction. Its courtyard has no roof, center building or towers.
 - The outpost has a continuous 6.2 m wall and connected wall-top walk. Three stairs lead to the west, east and south shooting positions. The rear walk links the three positions, while merlons leave firing gaps on the road-facing walls.
@@ -25,7 +25,7 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 - `LVL_01_MorrowDistrict` exists under `/Game/Maps` and opens as an Unreal level.
 - `LVL_01_MorrowDistrict` opens with PlayerStart inside the outpost courtyard.
 - Three visible road stubs reach the outpost from the west, east and south, then stop at its walls.
-- No road or traversable gap runs through or around the outpost; building masses touch its rear and sides.
+- No road or traversable gap runs through or around the outpost; building masses and sealed corner blocks close its rear and sides without covering the firing walls or walk.
 - Each of the three road-facing shooting walls has one stair from the courtyard to the connected wall-top walk.
 - Static wrecked cars make clear that traffic has stopped after the apocalypse.
 - District buildings have three visible storeys and dark blockout window panes.
