@@ -11,6 +11,8 @@
 #include "ShooterBulletCounterUI.h"
 #include "extractionFPS.h"
 #include "Widgets/Input/SVirtualJoystick.h"
+#include "extractionFPSGameMode.h"
+#include "InputCoreTypes.h"
 
 void AShooterPlayerController::BeginPlay()
 {
@@ -24,6 +26,13 @@ void AShooterPlayerController::SetupInputComponent()
 	// only add IMCs for local player controllers
 	if (IsLocalPlayerController())
 	{
+		InputComponent->BindKey(EKeys::One, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey1);
+		InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey2);
+		InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey3);
+		InputComponent->BindKey(EKeys::Four, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey4);
+		InputComponent->BindKey(EKeys::Five, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey5);
+		InputComponent->BindKey(EKeys::Six, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey6);
+		InputComponent->BindKey(EKeys::Seven, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey7);
 		// add the input mapping contexts
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 		{
@@ -73,6 +82,46 @@ void AShooterPlayerController::SetupInputComponent()
 		}
 	}
 }
+
+void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
+{
+	AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
+	APawn* PlayerPawn = GetPawn();
+	if (!GameMode || !PlayerPawn)
+	{
+		return;
+	}
+	const FVector Forward = PlayerPawn->GetActorForwardVector();
+	const FVector PlaceLocation = PlayerPawn->GetActorLocation() + Forward * 420.0f - FVector(0, 0, 70.0f);
+	switch (Hotkey)
+	{
+	case 1: GameMode->PurchaseDefense(ETDDefenseType::Turret, PlaceLocation, Forward.Rotation()); break;
+	case 2: GameMode->PurchaseDefense(ETDDefenseType::GuardBot, PlaceLocation, Forward.Rotation()); break;
+	case 3: GameMode->PurchaseDefense(ETDDefenseType::BarbedWire, PlaceLocation, Forward.Rotation()); break;
+	case 4: GameMode->RepairOutpost(); break;
+	case 5:
+		if (AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(PlayerPawn))
+		{
+			GameMode->CallAirstrike(ShooterCharacter->GetWeaponTargetLocation());
+		}
+		else
+		{
+			GameMode->CallAirstrike(PlayerPawn->GetActorLocation() + Forward * 1500.0f);
+		}
+		break;
+	case 6: GameMode->RefillPlayerAmmo(PlayerPawn); break;
+	case 7: GameMode->UpgradeOutpostWalls(); break;
+	default: break;
+	}
+}
+
+void AShooterPlayerController::DefenseHotkey1() { UseDefenseHotkey(1); }
+void AShooterPlayerController::DefenseHotkey2() { UseDefenseHotkey(2); }
+void AShooterPlayerController::DefenseHotkey3() { UseDefenseHotkey(3); }
+void AShooterPlayerController::DefenseHotkey4() { UseDefenseHotkey(4); }
+void AShooterPlayerController::DefenseHotkey5() { UseDefenseHotkey(5); }
+void AShooterPlayerController::DefenseHotkey6() { UseDefenseHotkey(6); }
+void AShooterPlayerController::DefenseHotkey7() { UseDefenseHotkey(7); }
 
 void AShooterPlayerController::OnPossess(APawn* InPawn)
 {

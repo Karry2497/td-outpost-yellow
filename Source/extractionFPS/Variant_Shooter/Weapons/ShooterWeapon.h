@@ -141,6 +141,7 @@ public:
 
 	/** Stop firing this weapon */
 	void StopFiring();
+	void RefillAmmo();
 
 protected:
 

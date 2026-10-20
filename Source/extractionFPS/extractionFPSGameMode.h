@@ -4,7 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
+#include "TimerManager.h"
 #include "extractionFPSGameMode.generated.h"
+
+class ATDZombieCharacter;
+class ATDDefenseDeployable;
+class APawn;
+
+UENUM(BlueprintType)
+enum class ETDDefenseType : uint8
+{
+	Turret,
+	GuardBot,
+	BarbedWire
+};
 
 /**
  *  Simple GameMode for a first person game
@@ -16,6 +29,45 @@ class AextractionFPSGameMode : public AGameModeBase
 
 public:
 	AextractionFPSGameMode();
+
+protected:
+	virtual void BeginPlay() override;
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+
+private:
+	void StartNextWave();
+	void SpawnNextZombie();
+	void CheckForWaveCompletion();
+
+	FTimerHandle WaveTimer;
+	FTimerHandle SpawnTimer;
+	TSet<TObjectPtr<ATDZombieCharacter>> ActiveZombies;
+	int32 CurrentWave = 0;
+	int32 ZombiesLeftToSpawn = 0;
+	int32 Credits = 100;
+	float OutpostHealth = 1000.0f;
+	float OutpostDamageMultiplier = 1.0f;
+	int32 WallUpgradeLevel = 0;
+	int32 NextSpawnLane = 0;
+
+public:
+	void NotifyZombieKilled(ATDZombieCharacter* Zombie);
+	void DamageOutpost(float Damage);
+	bool PurchaseDefense(ETDDefenseType Type, const FVector& Location, const FRotator& Rotation);
+	bool RepairOutpost();
+	bool UpgradeOutpostWalls();
+	bool CallAirstrike(const FVector& Center);
+	bool RefillPlayerAmmo(APawn* PlayerPawn);
+	void ShowDefenseStatus(const FString& Message, const FColor& Color = FColor::White) const;
+
+	UFUNCTION(BlueprintPure, Category="Defense")
+	int32 GetCurrentWave() const { return CurrentWave; }
+
+	UFUNCTION(BlueprintPure, Category="Defense")
+	int32 GetCredits() const { return Credits; }
+
+	UFUNCTION(BlueprintPure, Category="Defense")
+	float GetOutpostHealth() const { return OutpostHealth; }
 };
 
 

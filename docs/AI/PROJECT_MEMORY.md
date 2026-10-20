@@ -25,3 +25,6 @@
 - Use the linked OSPUZE advertisement as broad inspiration for bold color, high contrast, energetic composition, and graphic readability. Create an original game identity and assets rather than copying its branding or exact artwork.
 - The player controls a visible character in 3D from an elevated over-the-shoulder view.
 - The planned defense shop includes bots, turrets, barbed wire, stronger walls, ammunition, and an eagle airstrike. Prices and balance remain to be tuned after a playable loop exists.
+- First C++ gameplay pass now has three zombie archetypes (walker, runner, brute), wave pacing, credits, an outpost integrity pool, and hotkeys 1–7 for sentry, guard bot, wire, repairs, airstrike, ammo, and wall reinforcement. The current deployables are colored blockout meshes; their placement, UI, effects, and balance need a playtest pass.
+- Morrow District now has an optional in-editor palette script that recolors its existing blockout materials in a dark navy, cyan, teal, and orange scheme. It preserves the map actors and leaves the required yellow zombie color unobstructed.
+- The active editor can block native C++ rebuilds when Live Coding is enabled. Save work and close the editor or use its Live Coding compile shortcut before rebuilding; do not terminate the editor process because it may contain unsaved map changes.

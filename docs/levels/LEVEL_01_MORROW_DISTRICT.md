@@ -37,4 +37,4 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 
 Open the project in Unreal Editor with the Python Editor Script Plugin enabled, then run `Content/Python/Build_LVL_01_MorrowDistrict.py` in the Python console. Re-running the script regenerates the walled level and its blockout materials.
 
-This is a greybox slice. Zombie spawning, counting, combat logic, extraction interactions, final art, lighting and playtest tuning remain subsequent iterations.
+This remains a greybox slice. A first native zombie wave and defense loop is under implementation; it still needs editor build/PIE verification, final art, lighting and balance tuning.

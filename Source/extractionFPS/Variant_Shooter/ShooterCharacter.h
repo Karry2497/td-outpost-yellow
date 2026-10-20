@@ -135,6 +135,7 @@ public:
 	/** Handles switch weapon input */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	void DoSwitchWeapon();
+	bool RefillCurrentWeapon();
 
 public:
 

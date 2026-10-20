@@ -90,6 +90,14 @@ protected:
 
 	/** Returns true if the player should use UMG touch controls */
 	bool ShouldUseTouchControls() const;
+	void UseDefenseHotkey(uint8 Hotkey);
+	void DefenseHotkey1();
+	void DefenseHotkey2();
+	void DefenseHotkey3();
+	void DefenseHotkey4();
+	void DefenseHotkey5();
+	void DefenseHotkey6();
+	void DefenseHotkey7();
 
 public:
 

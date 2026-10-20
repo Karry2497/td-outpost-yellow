@@ -167,6 +167,17 @@ void AShooterCharacter::DoSwitchWeapon()
 	}
 }
 
+bool AShooterCharacter::RefillCurrentWeapon()
+{
+	if (!CurrentWeapon)
+	{
+		return false;
+	}
+	CurrentWeapon->RefillAmmo();
+	UpdateWeaponHUD(CurrentWeapon->GetBulletCount(), CurrentWeapon->GetMagazineSize());
+	return true;
+}
+
 void AShooterCharacter::AttachWeaponMeshes(AShooterWeapon* Weapon)
 {
 	const FAttachmentTransformRules AttachmentRule(EAttachmentRule::SnapToTarget, false);

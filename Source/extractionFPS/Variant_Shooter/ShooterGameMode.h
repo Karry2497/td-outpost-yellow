@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/GameModeBase.h"
+#include "extractionFPSGameMode.h"
 #include "ShooterGameMode.generated.h"
 
 class UShooterUI;
@@ -14,7 +14,7 @@ class UShooterUI;
  *  Keeps track of team scores
  */
 UCLASS(abstract)
-class EXTRACTIONFPS_API AShooterGameMode : public AGameModeBase
+class EXTRACTIONFPS_API AShooterGameMode : public AextractionFPSGameMode
 {
 	GENERATED_BODY()
 	

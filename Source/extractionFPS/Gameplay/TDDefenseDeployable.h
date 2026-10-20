@@ -1,0 +1,41 @@
+// Copyright Epic Games, Inc. All Rights Reserved.
+
+#pragma once
+
+#include "CoreMinimal.h"
+#include "GameFramework/Actor.h"
+#include "extractionFPSGameMode.h"
+#include "TDDefenseDeployable.generated.h"
+
+class UStaticMeshComponent;
+class USceneComponent;
+
+/** Small, readable placeholder defense actors for the first playable loop. */
+UCLASS()
+class EXTRACTIONFPS_API ATDDefenseDeployable : public AActor
+{
+	GENERATED_BODY()
+
+public:
+	ATDDefenseDeployable();
+	void Configure(ETDDefenseType NewType);
+
+protected:
+	virtual void Tick(float DeltaSeconds) override;
+
+private:
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USceneComponent> SceneRoot;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> BaseMesh;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UStaticMeshComponent> TopMesh;
+
+	ETDDefenseType DefenseType = ETDDefenseType::Turret;
+	float TickAccumulator = 0.0f;
+	float AttackInterval = 0.75f;
+	float AttackRadius = 2000.0f;
+	float AttackDamage = 30.0f;
+};
