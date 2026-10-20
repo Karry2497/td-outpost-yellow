@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "AIController.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
 #include "TimerManager.h"
@@ -37,6 +38,8 @@ ATDZombieCharacter::ATDZombieCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
 	GetCapsuleComponent()->InitCapsuleSize(40.0f, 92.0f);
+	AIControllerClass = AAIController::StaticClass();
+	AutoPossessAI = EAutoPossessAI::Spawned;
 
 	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ZombieMesh(
 		TEXT("/Game/Characters/Mannequins/Meshes/SKM_Manny_Simple.SKM_Manny_Simple"));
@@ -57,6 +60,8 @@ ATDZombieCharacter::ATDZombieCharacter()
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> ShapeMaterial(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> ZombieMaterial(
+		TEXT("/Game/Maps/Materials/M_Zombie_Yellow.M_Zombie_Yellow"));
 
 	if (CubeMesh.Succeeded() && ShapeMaterial.Succeeded())
 	{
@@ -88,10 +93,13 @@ ATDZombieCharacter::ATDZombieCharacter()
 			ShoulderArmor->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(1.0f, 0.12f, 0.025f)));
 		}
 
-		for (int32 MaterialIndex = 0; MaterialIndex < GetMesh()->GetNumMaterials(); ++MaterialIndex)
+		// BasicShapeMaterial is static-mesh-only and silently falls back on skeletal meshes.
+		if (ZombieMaterial.Succeeded())
 		{
-			GetMesh()->SetMaterial(MaterialIndex,
-				MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(1.0f, 0.84f, 0.015f)));
+			for (int32 MaterialIndex = 0; MaterialIndex < GetMesh()->GetNumMaterials(); ++MaterialIndex)
+			{
+				GetMesh()->SetMaterial(MaterialIndex, ZombieMaterial.Object);
+			}
 		}
 	}
 
@@ -106,7 +114,7 @@ void ATDZombieCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
-	GetWorldTimerManager().SetTimer(AttackTimer, this, &ATDZombieCharacter::AttackOutpost, 1.2f, true, 1.2f);
+	GetWorldTimerManager().SetTimer(AttackTimer, this, &ATDZombieCharacter::AttackOutpost, 1.4f, true, 1.4f);
 }
 
 void ATDZombieCharacter::Tick(float DeltaSeconds)
@@ -120,7 +128,11 @@ void ATDZombieCharacter::Tick(float DeltaSeconds)
 	const FVector ToTarget = OutpostTarget - GetActorLocation();
 	if (ToTarget.Size2D() > AttackRange * 0.8f)
 	{
-		AddMovementInput(ToTarget.GetSafeNormal2D(), 1.0f);
+		AddMovementInput(ToTarget.GetSafeNormal2D(), 1.0f, true);
+	}
+	else
+	{
+		GetCharacterMovement()->StopMovementImmediately();
 	}
 }
 
@@ -138,13 +150,13 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 	case ETDZombieArchetype::Runner:
 		Health = 48.0f * WaveHealthScale;
 		MoveSpeed = 430.0f;
-		OutpostDamage = 12.0f;
+		OutpostDamage = 10.0f;
 		GetMesh()->SetRelativeScale3D(FVector(0.88f));
 		break;
 	case ETDZombieArchetype::Brute:
 		Health = 220.0f * WaveHealthScale;
 		MoveSpeed = 185.0f;
-		OutpostDamage = 42.0f;
+		OutpostDamage = 32.0f;
 		GetMesh()->SetRelativeScale3D(FVector(1.22f));
 		if (ChestHarness)
 		{
@@ -158,7 +170,7 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 	default:
 		Health = 70.0f * WaveHealthScale;
 		MoveSpeed = 285.0f;
-		OutpostDamage = 18.0f;
+		OutpostDamage = 14.0f;
 		GetMesh()->SetRelativeScale3D(FVector(1.0f));
 		break;
 	}

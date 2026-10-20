@@ -12,10 +12,18 @@
 #include "Engine/World.h"
 #include "Camera/CameraComponent.h"
 #include "TimerManager.h"
+#include "UObject/ConstructorHelpers.h"
 #include "ShooterGameMode.h"
 
 AShooterCharacter::AShooterCharacter()
 {
+	static ConstructorHelpers::FClassFinder<AShooterWeapon> StarterPistol(
+		TEXT("/Game/Variant_Shooter/Blueprints/Pickups/Weapons/BP_ShooterWeapon_Pistol"));
+	if (StarterPistol.Succeeded())
+	{
+		StarterWeaponClass = StarterPistol.Class;
+	}
+
 	// create the noise emitter component
 	PawnNoiseEmitter = CreateDefaultSubobject<UPawnNoiseEmitterComponent>(TEXT("Pawn Noise Emitter"));
 
@@ -32,6 +40,13 @@ void AShooterCharacter::BeginPlay()
 
 	// update the HUD
 	OnDamaged.Broadcast(1.0f);
+
+	// This map has no weapon pickup at spawn, so give the player a starter pistol.
+	// A Blueprint-provided weapon wins; we only fill the empty-hand case.
+	if (!CurrentWeapon && StarterWeaponClass)
+	{
+		AddWeaponClass(StarterWeaponClass);
+	}
 }
 
 void AShooterCharacter::EndPlay(EEndPlayReason::Type EndPlayReason)

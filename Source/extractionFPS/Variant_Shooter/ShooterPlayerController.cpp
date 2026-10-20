@@ -13,6 +13,7 @@
 #include "Widgets/Input/SVirtualJoystick.h"
 #include "extractionFPSGameMode.h"
 #include "InputCoreTypes.h"
+#include "Engine/World.h"
 
 void AShooterPlayerController::BeginPlay()
 {
@@ -92,7 +93,7 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 		return;
 	}
 	const FVector Forward = PlayerPawn->GetActorForwardVector();
-	const FVector PlaceLocation = PlayerPawn->GetActorLocation() + Forward * 420.0f - FVector(0, 0, 70.0f);
+	const FVector PlaceLocation = GetDefensePlacementLocation();
 	switch (Hotkey)
 	{
 	case 1: GameMode->PurchaseDefense(ETDDefenseType::Turret, PlaceLocation, Forward.Rotation()); break;
@@ -113,6 +114,28 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	case 7: GameMode->UpgradeOutpostWalls(); break;
 	default: break;
 	}
+}
+
+FVector AShooterPlayerController::GetDefensePlacementLocation() const
+{
+	FVector ViewLocation;
+	FRotator ViewRotation;
+	GetPlayerViewPoint(ViewLocation, ViewRotation);
+	const FVector DesiredXY = ViewLocation + ViewRotation.Vector() * 1200.0f;
+	const FVector TraceStart(DesiredXY.X, DesiredXY.Y, ViewLocation.Z + 1000.0f);
+	const FVector TraceEnd(DesiredXY.X, DesiredXY.Y, ViewLocation.Z - 5000.0f);
+	FHitResult GroundHit;
+	FCollisionQueryParams Params(SCENE_QUERY_STAT(DefensePlacementGround), false, GetPawn());
+	if (GetWorld() && GetWorld()->LineTraceSingleByChannel(GroundHit, TraceStart, TraceEnd, ECC_Visibility, Params))
+	{
+		return GroundHit.ImpactPoint + FVector(0.0f, 0.0f, 8.0f);
+	}
+	if (APawn* PlayerPawn = GetPawn())
+	{
+		return PlayerPawn->GetActorLocation() + PlayerPawn->GetActorForwardVector() * 420.0f
+			- FVector(0.0f, 0.0f, 70.0f);
+	}
+	return FVector::ZeroVector;
 }
 
 void AShooterPlayerController::DefenseHotkey1() { UseDefenseHotkey(1); }

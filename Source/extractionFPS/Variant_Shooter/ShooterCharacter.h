@@ -73,6 +73,10 @@ protected:
 	/** List of weapons picked up by the character */
 	TArray<AShooterWeapon*> OwnedWeapons;
 
+	/** Fallback pistol for maps that do not place a weapon pickup */
+	UPROPERTY(EditDefaultsOnly, Category="Weapons")
+	TSubclassOf<AShooterWeapon> StarterWeaponClass;
+
 	/** Weapon currently equipped and ready to shoot with */
 	TObjectPtr<AShooterWeapon> CurrentWeapon;
 

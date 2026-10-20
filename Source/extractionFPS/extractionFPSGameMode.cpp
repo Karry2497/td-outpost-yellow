@@ -24,21 +24,27 @@ void AextractionFPSGameMode::BeginPlay()
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Yellow,
-			TEXT("OUTPOST DEFENSE  |  First wave in 8s  |  1 Turret  2 Bot  3 Wire  4 Repair  5 Airstrike  6 Ammo  7 Walls"));
+			TEXT("Protect the outpost. Spend credits on defenses, repairs and supplies."));
 	}
 
 	GetWorldTimerManager().SetTimer(WaveTimer, this, &AextractionFPSGameMode::StartNextWave, 8.0f, false);
+	GetWorldTimerManager().SetTimer(HUDTimer, this, &AextractionFPSGameMode::RefreshDefenseHUD, 0.5f, true, 0.0f);
 }
 
 void AextractionFPSGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	GetWorldTimerManager().ClearTimer(WaveTimer);
 	GetWorldTimerManager().ClearTimer(SpawnTimer);
+	GetWorldTimerManager().ClearTimer(HUDTimer);
 	Super::EndPlay(EndPlayReason);
 }
 
 void AextractionFPSGameMode::StartNextWave()
 {
+	if (bOutpostOverrun)
+	{
+		return;
+	}
 	++CurrentWave;
 	ZombiesLeftToSpawn = 4 + CurrentWave * 2;
 
@@ -66,9 +72,10 @@ void AextractionFPSGameMode::SpawnNextZombie()
 		FVector(250.0f, -8200.0f, 100.0f)
 	};
 	static const FVector WallTargets[] = {
-		FVector(-1500.0f, -350.0f, 0.0f),
-		FVector(1500.0f, 350.0f, 0.0f),
-		FVector(250.0f, -1500.0f, 0.0f)
+		// Stand just outside the wall face; center-of-wall targets were unreachable.
+		FVector(-2040.0f, -350.0f, 0.0f),
+		FVector(2040.0f, 350.0f, 0.0f),
+		FVector(250.0f, -2040.0f, 0.0f)
 	};
 
 	const int32 Lane = NextSpawnLane++ % UE_ARRAY_COUNT(SpawnLocations);
@@ -109,15 +116,23 @@ void AextractionFPSGameMode::NotifyZombieKilled(ATDZombieCharacter* Zombie)
 
 void AextractionFPSGameMode::DamageOutpost(float Damage)
 {
+	if (bOutpostOverrun || Damage <= 0.0f)
+	{
+		return;
+	}
 	OutpostHealth = FMath::Max(0.0f, OutpostHealth - Damage * OutpostDamageMultiplier);
 	if (GEngine)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red,
 			FString::Printf(TEXT("OUTPOST HIT  |  Integrity: %d%%"), FMath::RoundToInt(OutpostHealth / 10.0f)));
 	}
-	if (OutpostHealth <= 0.0f && GEngine)
+	if (OutpostHealth <= 0.0f)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 10.0f, FColor::Red, TEXT("OUTPOST OVERRUN  |  DEFENSE FAILED"));
+		bOutpostOverrun = true;
+		GetWorldTimerManager().ClearTimer(WaveTimer);
+		GetWorldTimerManager().ClearTimer(SpawnTimer);
+		ZombiesLeftToSpawn = 0;
+		ShowDefenseStatus(TEXT("OUTPOST OVERRUN  |  DEFENSE FAILED"), FColor::Red);
 	}
 }
 
@@ -154,7 +169,10 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 	}
 	Defense->Configure(Type);
 	Credits -= Cost;
-	ShowDefenseStatus(FString::Printf(TEXT("Defense deployed (-%d) | %d credits"), Cost, Credits), FColor(120, 255, 80));
+	const TCHAR* DefenseName = Type == ETDDefenseType::Turret
+		? TEXT("TURRET")
+		: (Type == ETDDefenseType::GuardBot ? TEXT("GUARD BOT") : TEXT("BARBED WIRE"));
+	ShowDefenseStatus(FString::Printf(TEXT("%s deployed | -%d credits | %d left"), DefenseName, Cost, Credits), FColor(120, 255, 80));
 	return true;
 }
 
@@ -180,7 +198,6 @@ bool AextractionFPSGameMode::CallAirstrike(const FVector& Center)
 		ShowDefenseStatus(TEXT("Airstrike costs 120 credits"), FColor::Red);
 		return false;
 	}
-	Credits -= Cost;
 	TArray<AActor*> Zombies;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATDZombieCharacter::StaticClass(), Zombies);
 	int32 Hits = 0;
@@ -192,6 +209,12 @@ bool AextractionFPSGameMode::CallAirstrike(const FVector& Center)
 			++Hits;
 		}
 	}
+	if (Hits == 0)
+	{
+		ShowDefenseStatus(TEXT("No zombies in the airstrike zone"), FColor::Red);
+		return false;
+	}
+	Credits -= Cost;
 	ShowDefenseStatus(FString::Printf(TEXT("EAGLE AIRSTRIKE | %d targets hit | %d credits"), Hits, Credits), FColor(0, 230, 255));
 	return true;
 }
@@ -200,9 +223,19 @@ bool AextractionFPSGameMode::RefillPlayerAmmo(APawn* PlayerPawn)
 {
 	constexpr int32 Cost = 25;
 	AShooterCharacter* Shooter = Cast<AShooterCharacter>(PlayerPawn);
-	if (!Shooter || Credits < Cost || !Shooter->RefillCurrentWeapon())
+	if (!Shooter)
 	{
-		ShowDefenseStatus(TEXT("Ammo refill costs 25 credits"), FColor::Red);
+		ShowDefenseStatus(TEXT("Ammo is only available to the armed player"), FColor::Red);
+		return false;
+	}
+	if (Credits < Cost)
+	{
+		ShowDefenseStatus(TEXT("Ammo costs 25 credits"), FColor::Red);
+		return false;
+	}
+	if (!Shooter->RefillCurrentWeapon())
+	{
+		ShowDefenseStatus(TEXT("No weapon equipped"), FColor::Red);
 		return false;
 	}
 	Credits -= Cost;
@@ -220,7 +253,7 @@ void AextractionFPSGameMode::ShowDefenseStatus(const FString& Message, const FCo
 
 void AextractionFPSGameMode::CheckForWaveCompletion()
 {
-	if (ZombiesLeftToSpawn == 0 && ActiveZombies.IsEmpty() && OutpostHealth > 0.0f)
+	if (!bOutpostOverrun && ZombiesLeftToSpawn == 0 && ActiveZombies.IsEmpty())
 	{
 		GetWorldTimerManager().ClearTimer(SpawnTimer);
 		if (GEngine)
@@ -230,4 +263,20 @@ void AextractionFPSGameMode::CheckForWaveCompletion()
 		}
 		GetWorldTimerManager().SetTimer(WaveTimer, this, &AextractionFPSGameMode::StartNextWave, 10.0f, false);
 	}
+}
+
+void AextractionFPSGameMode::RefreshDefenseHUD()
+{
+	if (!GEngine)
+	{
+		return;
+	}
+	const FString Status = FString::Printf(
+		TEXT("WAVE %d    CREDITS %d    OUTPOST %d%%    ZOMBIES %d"),
+		CurrentWave, Credits, FMath::RoundToInt(OutpostHealth / 10.0f),
+		ActiveZombies.Num() + ZombiesLeftToSpawn);
+	GEngine->AddOnScreenDebugMessage(41001, 0.6f, FColor(225, 250, 255), Status, false, FVector2D(1.25f, 1.25f));
+	GEngine->AddOnScreenDebugMessage(41002, 0.6f, FColor(255, 190, 85),
+		TEXT("BUY: 1 Turret 60 | 2 Bot 90 | 3 Wire 35 | 4 Repair 40 | 5 Strike 120 | 6 Ammo 25 | 7 Walls 80"),
+		false, FVector2D(1.0f, 1.0f));
 }

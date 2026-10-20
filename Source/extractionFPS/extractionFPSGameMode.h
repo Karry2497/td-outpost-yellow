@@ -38,17 +38,20 @@ private:
 	void StartNextWave();
 	void SpawnNextZombie();
 	void CheckForWaveCompletion();
+	void RefreshDefenseHUD();
 
 	FTimerHandle WaveTimer;
 	FTimerHandle SpawnTimer;
+	FTimerHandle HUDTimer;
 	TSet<TObjectPtr<ATDZombieCharacter>> ActiveZombies;
 	int32 CurrentWave = 0;
 	int32 ZombiesLeftToSpawn = 0;
-	int32 Credits = 100;
+	int32 Credits = 200;
 	float OutpostHealth = 1000.0f;
 	float OutpostDamageMultiplier = 1.0f;
 	int32 WallUpgradeLevel = 0;
 	int32 NextSpawnLane = 0;
+	bool bOutpostOverrun = false;
 
 public:
 	void NotifyZombieKilled(ATDZombieCharacter* Zombie);
