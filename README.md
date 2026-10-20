@@ -1,6 +1,6 @@
 # Extraction FPS
 
-Unreal Engine 5.8 C++ first-person project. The starter project currently uses the Unreal First Person template; the game design and extraction loop will be defined in subsequent setup steps.
+Unreal Engine 5.8 C++ third-person tower-defense prototype. Defend the outpost from waves of yellow zombies, improve defenses between attacks, and keep the colorful, graphic presentation readable and playful.
 
 Source repository: [Karry2497/extraction-fps-2](https://github.com/Karry2497/extraction-fps-2) (private).
 
@@ -12,7 +12,7 @@ The Unreal MCP server runs inside the editor on `http://127.0.0.1:8000/mcp`. Kee
 
 ## First level
 
-The game and editor default map is [`LVL_01_MorrowDistrict_Walled`](Content/Maps/LVL_01_MorrowDistrict_Walled.umap), a city-district greybox with an outpost occupying and blocking an old three-arm junction. Three abandoned road approaches end at the outpost; attached three-storey buildings seal its rear and sides. Three narrow stairs with small individual treads lead from the open, roofless courtyard to connected firing positions. Static wrecked cars remain on the streets, while zombie spawning and counting remain future gameplay work. Its layout and regeneration script are documented in [`docs/levels/LEVEL_01_MORROW_DISTRICT.md`](docs/levels/LEVEL_01_MORROW_DISTRICT.md).
+The game and editor default map is [`LVL_01_MorrowDistrict_Walled`](Content/Maps/LVL_01_MorrowDistrict_Walled.umap), a city-district greybox with an outpost occupying and blocking an old three-arm junction. Three abandoned road approaches end at the outpost; attached three-storey buildings seal its rear and sides. Three narrow stairs with small individual treads lead from the open, roofless courtyard to connected firing positions. Static wrecked cars remain on the streets. The level is being extended into a playable tower-defense loop in focused iterations; its layout and regeneration script are documented in [`docs/levels/LEVEL_01_MORROW_DISTRICT.md`](docs/levels/LEVEL_01_MORROW_DISTRICT.md).
 
 To transfer the native level and its materials to another UE5 project, use the [Morrow District import package](Exports/LVL_01_MorrowDistrict_UE5_Import.zip). Extract it at the target project root so its `Content` directory merges into the target `Content` directory, then open `/Game/Maps/LVL_01_MorrowDistrict` in Unreal Editor. The attached project already contains this level and opens on it by default.
 

@@ -8,6 +8,7 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "GameFramework/CharacterMovementComponent.h"
+#include "GameFramework/SpringArmComponent.h"
 #include "extractionFPS.h"
 
 AextractionFPSCharacter::AextractionFPSCharacter()
@@ -15,26 +16,32 @@ AextractionFPSCharacter::AextractionFPSCharacter()
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(55.f, 96.0f);
 	
-	// Create the first person mesh that will be viewed only by this character's owner
+	// Keep the template's first-person arms for existing weapon animations, but
+	// hide them while the game uses the visible full-body character mesh.
 	FirstPersonMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("First Person Mesh"));
 
 	FirstPersonMesh->SetupAttachment(GetMesh());
 	FirstPersonMesh->SetOnlyOwnerSee(true);
 	FirstPersonMesh->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::FirstPerson;
 	FirstPersonMesh->SetCollisionProfileName(FName("NoCollision"));
+	FirstPersonMesh->SetHiddenInGame(true, true);
 
-	// Create the Camera Component	
+	// Follow the character from a raised, over-the-shoulder third-person view.
+	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera Boom"));
+	CameraBoom->SetupAttachment(GetCapsuleComponent());
+	CameraBoom->TargetArmLength = 425.0f;
+	CameraBoom->SocketOffset = FVector(0.0f, 65.0f, 30.0f);
+	CameraBoom->bUsePawnControlRotation = true;
+	CameraBoom->bDoCollisionTest = true;
+
+	// Create the camera on the end of the boom.
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
-	FirstPersonCameraComponent->SetupAttachment(FirstPersonMesh, FName("head"));
-	FirstPersonCameraComponent->SetRelativeLocationAndRotation(FVector(-2.8f, 5.89f, 0.0f), FRotator(0.0f, 90.0f, -90.0f));
-	FirstPersonCameraComponent->bUsePawnControlRotation = true;
-	FirstPersonCameraComponent->bEnableFirstPersonFieldOfView = true;
-	FirstPersonCameraComponent->bEnableFirstPersonScale = true;
-	FirstPersonCameraComponent->FirstPersonFieldOfView = 70.0f;
-	FirstPersonCameraComponent->FirstPersonScale = 0.6f;
+	FirstPersonCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
+	FirstPersonCameraComponent->bUsePawnControlRotation = false;
+	FirstPersonCameraComponent->FieldOfView = 80.0f;
 
 	// configure the character comps
-	GetMesh()->SetOwnerNoSee(true);
+	GetMesh()->SetOwnerNoSee(false);
 	GetMesh()->FirstPersonPrimitiveType = EFirstPersonPrimitiveType::WorldSpaceRepresentation;
 
 	GetCapsuleComponent()->SetCapsuleSize(34.0f, 96.0f);
@@ -42,6 +49,24 @@ AextractionFPSCharacter::AextractionFPSCharacter()
 	// Configure character movement
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
 	GetCharacterMovement()->AirControl = 0.5f;
+	GetCharacterMovement()->bOrientRotationToMovement = true;
+	GetCharacterMovement()->RotationRate = FRotator(0.0f, 600.0f, 0.0f);
+	bUseControllerRotationYaw = false;
+}
+
+void AextractionFPSCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+
+	// Start with a slight downward angle so the character and nearby ground are
+	// visible without the player needing to adjust the mouse first.
+	if (Controller)
+	{
+		FRotator ControlRotation = Controller->GetControlRotation();
+		ControlRotation.Pitch = -12.0f;
+		ControlRotation.Yaw = GetActorRotation().Yaw;
+		Controller->SetControlRotation(ControlRotation);
+	}
 }
 
 void AextractionFPSCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -102,8 +127,13 @@ void AextractionFPSCharacter::DoMove(float Right, float Forward)
 	if (GetController())
 	{
 		// pass the move inputs
-		AddMovementInput(GetActorRightVector(), Right);
-		AddMovementInput(GetActorForwardVector(), Forward);
+		const FRotator ControlRotation = GetController()->GetControlRotation();
+		const FRotator YawRotation(0.0f, ControlRotation.Yaw, 0.0f);
+		const FVector ForwardDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
+		const FVector RightDirection = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
+
+		AddMovementInput(RightDirection, Right);
+		AddMovementInput(ForwardDirection, Forward);
 	}
 }
 

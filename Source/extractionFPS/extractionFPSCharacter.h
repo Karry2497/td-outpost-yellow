@@ -10,6 +10,7 @@
 class UInputComponent;
 class USkeletalMeshComponent;
 class UCameraComponent;
+class USpringArmComponent;
 class UInputAction;
 struct FInputActionValue;
 
@@ -23,11 +24,15 @@ class AextractionFPSCharacter : public ACharacter
 {
 	GENERATED_BODY()
 
-	/** Pawn mesh: first person view (arms; seen only by self) */
+	/** First-person arms kept for compatibility with existing weapon setup. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	USkeletalMeshComponent* FirstPersonMesh;
 
-	/** First person camera */
+	/** Raised third-person follow camera boom. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	USpringArmComponent* CameraBoom;
+
+	/** Third-person follow camera (legacy name kept for existing gameplay code). */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
 
@@ -80,6 +85,7 @@ protected:
 
 	/** Set up input action bindings */
 	virtual void SetupPlayerInputComponent(UInputComponent* InputComponent) override;
+	virtual void BeginPlay() override;
 	
 
 public:
