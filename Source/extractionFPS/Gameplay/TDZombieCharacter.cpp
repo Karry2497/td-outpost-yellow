@@ -71,7 +71,7 @@ ATDZombieCharacter::ATDZombieCharacter()
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> ShapeMaterial(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> ZombieMaterial(
-		TEXT("/Game/Maps/Materials/M_Zombie_StylizedYellow.M_Zombie_StylizedYellow"));
+		TEXT("/Game/Maps/Materials/M_Zombie_StylizedYellow_Runtime.M_Zombie_StylizedYellow_Runtime"));
 
 	FName TorsoBone(TEXT("spine_03"));
 	if (GetMesh()->GetBoneIndex(TorsoBone) == INDEX_NONE)
