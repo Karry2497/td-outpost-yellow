@@ -103,7 +103,13 @@ void AShooterCharacter::DoAim(float Yaw, float Pitch)
 	// only route inputs if the character is not dead
 	if (!IsDead())
 	{
-		Super::DoAim(Yaw, Pitch);
+		if (AController* PlayerController = GetController())
+		{
+			AddControllerYawInput(Yaw);
+			FRotator ControlRotation = PlayerController->GetControlRotation();
+			ControlRotation.Pitch = FMath::Clamp(ControlRotation.Pitch + Pitch, -70.0f, -48.0f);
+			PlayerController->SetControlRotation(ControlRotation);
+		}
 	}
 }
 

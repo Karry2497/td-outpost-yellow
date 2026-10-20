@@ -29,8 +29,10 @@ AextractionFPSCharacter::AextractionFPSCharacter()
 	// Follow the character from a raised, over-the-shoulder third-person view.
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("Camera Boom"));
 	CameraBoom->SetupAttachment(GetCapsuleComponent());
-	CameraBoom->TargetArmLength = 425.0f;
-	CameraBoom->SocketOffset = FVector(0.0f, 65.0f, 30.0f);
+	// High, angled battlefield view: the player stays directly controllable,
+	// while the wider camera can keep the outpost and nearby approaches readable.
+	CameraBoom->TargetArmLength = 650.0f;
+	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 110.0f);
 	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->bDoCollisionTest = true;
 
@@ -38,7 +40,7 @@ AextractionFPSCharacter::AextractionFPSCharacter()
 	FirstPersonCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("First Person Camera"));
 	FirstPersonCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FirstPersonCameraComponent->bUsePawnControlRotation = false;
-	FirstPersonCameraComponent->FieldOfView = 80.0f;
+	FirstPersonCameraComponent->FieldOfView = 58.0f;
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(false);
@@ -58,12 +60,12 @@ void AextractionFPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Start with a slight downward angle so the character and nearby ground are
-	// visible without the player needing to adjust the mouse first.
+	// Start at a fixed-feeling high angle, like a 3D mobile tower-defense game.
+	// Mouse yaw remains free so aiming and movement still feel direct.
 	if (Controller)
 	{
 		FRotator ControlRotation = Controller->GetControlRotation();
-		ControlRotation.Pitch = -12.0f;
+		ControlRotation.Pitch = -48.0f;
 		ControlRotation.Yaw = GetActorRotation().Yaw;
 		Controller->SetControlRotation(ControlRotation);
 	}

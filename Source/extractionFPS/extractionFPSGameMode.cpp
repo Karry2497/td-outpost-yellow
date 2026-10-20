@@ -123,7 +123,7 @@ void AextractionFPSGameMode::DamageOutpost(float Damage)
 	OutpostHealth = FMath::Max(0.0f, OutpostHealth - Damage * OutpostDamageMultiplier);
 	if (GEngine)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 2.0f, FColor::Red,
+		GEngine->AddOnScreenDebugMessage(41003, 2.0f, FColor::Red,
 			FString::Printf(TEXT("OUTPOST HIT  |  Integrity: %d%%"), FMath::RoundToInt(OutpostHealth / 10.0f)));
 	}
 	if (OutpostHealth <= 0.0f)
