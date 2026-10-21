@@ -171,6 +171,34 @@ def main():
     road(cube, "Road / east dead-end approach", 6825.0, 0.0, 10350.0, 1800.0, 0.0, asphalt)
     road(cube, "Road / south dead-end approach", 0.0, -5825.0, 8350.0, 1800.0, 90.0, asphalt)
 
+    # The extraction staging area sits beyond the south edge of town. Extend
+    # the abandoned street into a separate apron, with a visible landing mark
+    # and a deliberately simple helicopter silhouette for the greybox.
+    box(cube, "Extraction / outer staging ground", 0.0, -14000.0, -100.0, 8000.0, 8000.0, 200.0, pavement)
+    road(cube, "Extraction / access road beyond city", 0.0, -12000.0, 7600.0, 1800.0, 90.0, asphalt)
+    box(cube, "Extraction / helicopter landing pad", 0.0, -15000.0, 30.0, 6000.0, 6000.0, 60.0, concrete)
+    for x in (-2900.0, 2900.0):
+        box(cube, "Extraction / pad edge", x, -15000.0, 80.0, 120.0, 6000.0, 40.0, cover_mat)
+    for y in (-17900.0, -12100.0):
+        box(cube, "Extraction / pad edge", 0.0, y, 80.0, 6000.0, 120.0, 40.0, cover_mat)
+    # H-shaped touchdown mark; reserve its eastern half for the parked aircraft.
+    for x in (-1700.0, -100.0):
+        box(cube, "Extraction / H landing mark leg", x, -15000.0, 72.0, 180.0, 1500.0, 24.0, cover_mat)
+    box(cube, "Extraction / H landing mark bar", -900.0, -15000.0, 72.0, 1500.0, 180.0, 24.0, cover_mat)
+    # The helicopter faces south. The separate meshes keep the landing zone
+    # editable until a licensed final vehicle model is selected.
+    heli_x = 1300.0
+    box(cube, "Extraction / helicopter fuselage", heli_x, -15500.0, 260.0, 500.0, 1000.0, 350.0, cover_mat)
+    box(cube, "Extraction / helicopter nose", heli_x, -16450.0, 250.0, 430.0, 350.0, 260.0, cover_mat)
+    box(cube, "Extraction / helicopter cockpit glass", heli_x, -16550.0, 285.0, 350.0, 100.0, 180.0, glass_mat)
+    box(cube, "Extraction / helicopter tail boom", heli_x, -14300.0, 220.0, 140.0, 800.0, 140.0, cover_mat)
+    box(cube, "Extraction / helicopter tail fin", heli_x, -14000.0, 330.0, 80.0, 180.0, 260.0, cover_mat)
+    box(cube, "Extraction / helicopter rotor mast", heli_x, -15500.0, 470.0, 45.0, 45.0, 200.0, rust)
+    box(cube, "Extraction / helicopter main rotor A", heli_x, -15500.0, 580.0, 2600.0, 110.0, 24.0, rust)
+    box(cube, "Extraction / helicopter main rotor B", heli_x, -15500.0, 585.0, 110.0, 2600.0, 24.0, rust)
+    for x in (heli_x - 520.0, heli_x + 520.0):
+        box(cube, "Extraction / helicopter landing skid", x, -15500.0, 90.0, 35.0, 1200.0, 30.0, rust)
+
     # Three-storey blocks seal the district around the compound, but their
     # inner corners align with the outer edge of the firing walk. This keeps
     # the west/east walls and the connected walk fully exposed and traversable.

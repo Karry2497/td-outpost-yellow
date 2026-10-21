@@ -10,6 +10,7 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 2. Use one of the three stairs to climb to a road-facing firing wall.
 3. Move along the connected wall-top walk between firing positions and watch the three blocked approaches.
 4. Use the clear courtyard as the staging point; zombie spawning, counting and combat rules are subsequent gameplay work.
+5. Planned extraction objective: unlock or clear the southern exit after the defense, then reach the helicopter landing zone outside town. The playable exit is not wired yet.
 
 ## Greybox footprint
 
@@ -17,6 +18,7 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 - Primary lanes: three abandoned road approaches from the west, east and south. Each ends at an outpost wall; none passes through or around the courtyard.
 - Buildings: three-storey windowed blocks border the outer edge of the firing walk along the rear and sides. Their corners leave the full west and east walls and the connected walk exposed; sealed corner blocks close ground-level bypass gaps. A connected rear support building closes the northern edge without blocking the walk.
 - Wreckage: damaged, stationary cars and rubble sit on the approach roads. No traffic or moving vehicles are present.
+- Extraction: the southern street is visually extended beyond the city edge to an orange-bordered landing apron, with an H touchdown mark and a simple parked helicopter greybox. This communicates the extraction destination; an unlockable player route and extraction trigger remain gameplay tasks.
 - The outpost occupies the old T-junction. Its courtyard has no roof, center building, console or towers.
 - The outpost has a continuous 6.2 m high, 8 m thick wall base that fills the full wall-top walk footprint down to ground level, leaving no sheltered cavity beneath the walk. Three narrow stairs, each with 40 small treads, reach the inner edge of the wall and lead to the west, east and south shooting positions. Their offset entrances keep the courtyard center clear. The rear walk links the three positions. The three road-facing firing edges stay open, with no high merlons or overhead cover blocking aim.
 
@@ -31,6 +33,7 @@ First playable greybox for the extraction-focused FPS. The old three-arm street 
 - Static wrecked cars make clear that traffic has stopped after the apocalypse.
 - District buildings have three visible storeys and dark blockout window panes.
 - No roof or tower covers the courtyard or wall-top firing positions.
+- A distinct helicopter landing zone is visible outside the city's southern edge and lines up with the extended southern road.
 - No imported art, gameplay system, or online dependency is required for the blockout.
 
 ## Build
