@@ -21,8 +21,8 @@ void AShooterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// This project is now a tower-defense game: keep the camera fixed above the
-	// battlefield and remove the old shooter pawn from the play session.
+	// This project is now a tower-defense game: keep a fixed tactical camera on
+	// the safe north side of the outpost and remove the old shooter pawn.
 	bAutoManageActiveCameraTarget = false;
 	if (GetWorld() && GetWorld()->GetAuthGameMode<AextractionFPSGameMode>())
 	{
@@ -41,11 +41,11 @@ void AShooterPlayerController::BeginPlay()
 		FActorSpawnParameters CameraSpawnParams;
 		CameraSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		if (ACameraActor* DefenseCamera = GetWorld()->SpawnActor<ACameraActor>(
-			ACameraActor::StaticClass(), FVector(0.0f, 0.0f, 26000.0f), FRotator(-90.0f, 0.0f, 0.0f), CameraSpawnParams))
+			ACameraActor::StaticClass(), FVector(0.0f, 10500.0f, 7600.0f), FRotator(-36.0f, -90.0f, 0.0f), CameraSpawnParams))
 		{
 			UCameraComponent* CameraComponent = DefenseCamera->GetCameraComponent();
-			CameraComponent->SetProjectionMode(ECameraProjectionMode::Orthographic);
-			CameraComponent->OrthoWidth = 34000.0f;
+			CameraComponent->SetProjectionMode(ECameraProjectionMode::Perspective);
+			CameraComponent->FieldOfView = 94.0f;
 			SetViewTarget(DefenseCamera);
 		}
 	}
