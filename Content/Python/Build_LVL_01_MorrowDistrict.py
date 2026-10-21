@@ -14,6 +14,7 @@ import unreal
 
 LEVEL_PATH = "/Game/Maps/LVL_01_MorrowDistrict_Walled"
 MATERIAL_PATH = "/Game/Maps/Materials"
+LEVEL_SCALE = 0.8  # Compact the whole play space by 20% around the outpost.
 
 
 def make_color_material(name, color):
@@ -38,6 +39,8 @@ def make_color_material(name, color):
 
 
 def spawn_mesh(mesh, label, location, scale, rotation=None, material=None):
+    location = tuple(component * LEVEL_SCALE for component in location)
+    scale = (scale[0] * LEVEL_SCALE, scale[1] * LEVEL_SCALE, scale[2] * LEVEL_SCALE)
     rotation = rotation or unreal.Rotator(0.0, 0.0, 0.0)
     actor = unreal.EditorLevelLibrary.spawn_actor_from_class(
         unreal.StaticMeshActor, unreal.Vector(*location), rotation
@@ -66,11 +69,11 @@ def road(mesh, label, x, y, length, width, yaw, asphalt):
     return box(mesh, label, x, y, -15.0, length, width, 30.0, asphalt, yaw)
 
 
-def build_pad(mesh, label, x, y, pad_material, mark_material):
-    """Mark a small, non-blocking shoulder spot for one defense deployable."""
-    box(mesh, label + " / base", x, y, 14.0, 300.0, 300.0, 28.0, pad_material)
-    box(mesh, label + " / cross mark", x, y, 30.0, 190.0, 28.0, 4.0, mark_material)
-    box(mesh, label + " / cross mark", x, y, 30.0, 28.0, 190.0, 4.0, mark_material)
+def build_pad(mesh, label, x, y, surface_z, pad_material, mark_material):
+    """Mark a rooftop slot for placing a defense turret."""
+    box(mesh, label + " / base", x, y, surface_z + 14.0, 300.0, 300.0, 28.0, pad_material)
+    box(mesh, label + " / cross mark", x, y, surface_z + 30.0, 190.0, 28.0, 4.0, mark_material)
+    box(mesh, label + " / cross mark", x, y, surface_z + 30.0, 28.0, 190.0, 4.0, mark_material)
 
 
 def wall(mesh, label, x, y, z, length, height, yaw, concrete, thickness=30.0):
@@ -247,10 +250,10 @@ def main():
     for x in (-6650.0, 6650.0):
         box(cube, "Blockout / perimeter south gate flank", x, -10000.0, 400.0, 10700.0, 300.0, 800.0, concrete)
     outer_gate = unreal.EditorLevelLibrary.spawn_actor_from_class(
-        extraction_gate_class, unreal.Vector(0.0, -10000.0, 400.0), unreal.Rotator(0.0, 0.0, 0.0)
+        extraction_gate_class, unreal.Vector(0.0, -10000.0 * LEVEL_SCALE, 400.0 * LEVEL_SCALE), unreal.Rotator(0.0, 0.0, 0.0)
     )
     outer_gate.set_actor_label("Extraction / closed south city gate")
-    outer_gate.set_actor_scale3d(unreal.Vector(26.0, 3.0, 8.0))
+    outer_gate.set_actor_scale3d(unreal.Vector(26.0 * LEVEL_SCALE, 3.0 * LEVEL_SCALE, 8.0 * LEVEL_SCALE))
     outer_gate.get_component_by_class(unreal.StaticMeshComponent).set_material(0, extraction_gate_mat)
 
     # The former streets now stop at the outpost walls. There is no road through
@@ -268,18 +271,18 @@ def main():
     for i, y in enumerate(range(-10000, -2500, 1000)):
         box(cube, "Road marking / south dash %02d" % i, 0.0, y, 2.0, 34.0, 430.0, 4.0, road_mark)
 
-    # Six clear defense pads sit on the shoulders, keeping all three zombie
-    # lanes open while giving players more useful tower coverage choices.
+    # Six turret pads sit on building rooftops, clear of zombie lanes and
+    # rooftop equipment. Their world coordinates are mirrored by GameMode.
     tower_pad_locations = (
-        ("west approach A", -6400.0, -1220.0),
-        ("west approach B", -4200.0, 1220.0),
-        ("east approach A", 6400.0, 1220.0),
-        ("east approach B", 4200.0, -1220.0),
-        ("south approach A", -1220.0, -6400.0),
-        ("south approach B", 1220.0, -4200.0),
+        ("northwest rooftop A", -9000.0, 8000.0, 1120.0),
+        ("northwest rooftop B", -5000.0, 8000.0, 1120.0),
+        ("northeast rooftop A", 5000.0, 8000.0, 1120.0),
+        ("northeast rooftop B", 9000.0, 8000.0, 1120.0),
+        ("southwest rooftop", -9000.0, -8000.0, 1120.0),
+        ("southeast rooftop", 9000.0, -8000.0, 1120.0),
     )
-    for label, pad_x, pad_y in tower_pad_locations:
-        build_pad(cube, "Defense build pad / " + label, pad_x, pad_y, build_pad_mat, build_pad_mark)
+    for label, pad_x, pad_y, roof_z in tower_pad_locations:
+        build_pad(cube, "Defense build pad / " + label, pad_x, pad_y, roof_z, build_pad_mat, build_pad_mark)
 
     # The extraction staging area sits beyond the south edge of town. Extend
     # the abandoned street into a separate apron, with a visible landing mark
@@ -347,10 +350,10 @@ def main():
         wall(cube, "Outpost / perimeter south " + side, x, -compound_half, wall_height / 2.0, south_segment, wall_height, 0.0, outpost_mat, wall_thickness)
     box(cube, "Outpost / south doorway lintel", 0.0, -compound_half, wall_height - 120.0, south_gate_width, wall_thickness, 240.0, outpost_mat)
     outpost_gate = unreal.EditorLevelLibrary.spawn_actor_from_class(
-        extraction_gate_class, unreal.Vector(0.0, -compound_half, 190.0), unreal.Rotator(0.0, 0.0, 0.0)
+        extraction_gate_class, unreal.Vector(0.0, -compound_half * LEVEL_SCALE, 190.0 * LEVEL_SCALE), unreal.Rotator(0.0, 0.0, 0.0)
     )
     outpost_gate.set_actor_label("Extraction / closed outpost gate")
-    outpost_gate.set_actor_scale3d(unreal.Vector(south_gate_width / 100.0, wall_thickness / 100.0, 3.8))
+    outpost_gate.set_actor_scale3d(unreal.Vector(south_gate_width / 100.0 * LEVEL_SCALE, wall_thickness / 100.0 * LEVEL_SCALE, 3.8 * LEVEL_SCALE))
     outpost_gate.get_component_by_class(unreal.StaticMeshComponent).set_material(0, extraction_gate_mat)
     wall(cube, "Outpost / perimeter north", 0.0, compound_half, wall_height / 2.0, compound_half * 2.0, wall_height, 0.0, outpost_mat, wall_thickness)
     # Define the long side walls directly in world X/Y dimensions. This keeps
@@ -431,7 +434,7 @@ def main():
 
     # Start safely inside the courtyard so the player can reach the three stairs.
     start = unreal.EditorLevelLibrary.spawn_actor_from_class(
-        unreal.PlayerStart, unreal.Vector(0.0, -600.0, 120.0), unreal.Rotator(0.0, -90.0, 0.0)
+        unreal.PlayerStart, unreal.Vector(0.0, -600.0 * LEVEL_SCALE, 120.0 * LEVEL_SCALE), unreal.Rotator(0.0, -90.0, 0.0)
     )
     start.set_actor_label("Insertion / PlayerStart")
 
@@ -440,11 +443,11 @@ def main():
         unreal.NavMeshBoundsVolume, unreal.Vector(0.0, 0.0, 1000.0), unreal.Rotator(0.0, 0.0, 0.0)
     )
     nav.set_actor_label("Navigation / district bounds")
-    nav.set_actor_scale3d(unreal.Vector(120.0, 100.0, 20.0))
+    nav.set_actor_scale3d(unreal.Vector(120.0 * LEVEL_SCALE, 100.0 * LEVEL_SCALE, 20.0 * LEVEL_SCALE))
 
     level_editor.save_current_level()
     unreal.EditorAssetLibrary.save_directory("/Game/Maps", only_if_is_dirty=True, recursive=True)
-    unreal.log("Created LVL_01_MorrowDistrict with five defense waves, gated southern extraction route, helicopter landing zone, three approaches and the walled outpost")
+    unreal.log("Created compact LVL_01_MorrowDistrict with five defense waves, gated southern extraction route, helicopter landing zone, three approaches and the walled outpost")
 
 
 main()

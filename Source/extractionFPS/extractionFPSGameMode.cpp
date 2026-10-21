@@ -33,7 +33,7 @@ void AextractionFPSGameMode::BeginPlay()
 		}
 	}
 	ExtractionZone = GetWorld()->SpawnActor<ATDExtractionZone>(
-		ATDExtractionZone::StaticClass(), FVector(0.0f, -15000.0f, 150.0f), FRotator::ZeroRotator);
+		ATDExtractionZone::StaticClass(), FVector(0.0f, -12000.0f, 120.0f), FRotator::ZeroRotator);
 
 	if (GEngine)
 	{
@@ -81,15 +81,15 @@ void AextractionFPSGameMode::SpawnNextZombie()
 
 	// The three approaches stop at the outpost walls: west, east and south.
 	static const FVector SpawnLocations[] = {
-		FVector(-8600.0f, -350.0f, 100.0f),
-		FVector(8600.0f, 350.0f, 100.0f),
-		FVector(250.0f, -8200.0f, 100.0f)
+		FVector(-6880.0f, -280.0f, 100.0f),
+		FVector(6880.0f, 280.0f, 100.0f),
+		FVector(200.0f, -6560.0f, 100.0f)
 	};
 	static const FVector WallTargets[] = {
 		// Stand just outside the wall face; center-of-wall targets were unreachable.
-		FVector(-2040.0f, -350.0f, 0.0f),
-		FVector(2040.0f, 350.0f, 0.0f),
-		FVector(250.0f, -2040.0f, 0.0f)
+		FVector(-1632.0f, -280.0f, 0.0f),
+		FVector(1632.0f, 280.0f, 0.0f),
+		FVector(200.0f, -1632.0f, 0.0f)
 	};
 
 	const int32 Lane = NextSpawnLane++ % UE_ARRAY_COUNT(SpawnLocations);
@@ -173,9 +173,32 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 		ShowDefenseStatus(Credits < Cost ? TEXT("Not enough credits") : TEXT("Cannot place defense"), FColor::Red);
 		return false;
 	}
+	FVector DeploymentLocation = Location;
+	if (Type == ETDDefenseType::Turret)
+	{
+		// Turrets are built only on the six marked rooftops, never on zombie lanes.
+		static const FVector RooftopSlots[] = {
+			FVector(-7200.0f, 6400.0f, 904.0f),
+			FVector(-4000.0f, 6400.0f, 904.0f),
+			FVector(4000.0f, 6400.0f, 904.0f),
+			FVector(7200.0f, 6400.0f, 904.0f),
+			FVector(-7200.0f, -6400.0f, 904.0f),
+			FVector(7200.0f, -6400.0f, 904.0f)
+		};
+		float NearestDistanceSquared = TNumericLimits<float>::Max();
+		for (const FVector& Slot : RooftopSlots)
+		{
+			const float DistanceSquared = FVector::DistSquared2D(Location, Slot);
+			if (DistanceSquared < NearestDistanceSquared)
+			{
+				NearestDistanceSquared = DistanceSquared;
+				DeploymentLocation = Slot;
+			}
+		}
+	}
 	FActorSpawnParameters SpawnParams;
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
-	ATDDefenseDeployable* Defense = GetWorld()->SpawnActor<ATDDefenseDeployable>(ATDDefenseDeployable::StaticClass(), Location, Rotation, SpawnParams);
+	ATDDefenseDeployable* Defense = GetWorld()->SpawnActor<ATDDefenseDeployable>(ATDDefenseDeployable::StaticClass(), DeploymentLocation, Rotation, SpawnParams);
 	if (!Defense)
 	{
 		ShowDefenseStatus(TEXT("Placement failed"), FColor::Red);
