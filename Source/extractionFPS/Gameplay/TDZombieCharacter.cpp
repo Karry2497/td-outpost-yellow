@@ -102,6 +102,60 @@ ATDZombieCharacter::ATDZombieCharacter()
 		ChestHarness->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 		ChestHarness->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(0.035f, 0.045f, 0.07f)));
 
+		// Salvaged field gear gives the yellow silhouettes a stronger, more
+		// characterful read from the overhead camera without recoloring the skin.
+		SalvagePack = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Graphic Salvage Pack"));
+		SalvagePack->SetupAttachment(GetMesh(), TorsoBone);
+		SalvagePack->SetStaticMesh(CubeMesh.Object);
+		SalvagePack->SetRelativeLocation(FVector(-17.0f, -17.0f, 5.0f));
+		SalvagePack->SetRelativeRotation(FRotator(0.0f, 0.0f, 8.0f));
+		SalvagePack->SetRelativeScale3D(FVector(0.24f, 0.31f, 0.32f));
+		SalvagePack->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		SalvagePack->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(0.05f, 0.30f, 0.33f)));
+
+		UtilityBelt = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Graphic Utility Belt"));
+		UtilityBelt->SetupAttachment(GetMesh(), TorsoBone);
+		UtilityBelt->SetStaticMesh(CubeMesh.Object);
+		UtilityBelt->SetRelativeLocation(FVector(0.0f, 0.0f, -20.0f));
+		UtilityBelt->SetRelativeScale3D(FVector(0.36f, 0.28f, 0.09f));
+		UtilityBelt->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		UtilityBelt->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(0.17f, 0.11f, 0.07f)));
+
+		ChestStrap = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Graphic Salvage Strap"));
+		ChestStrap->SetupAttachment(GetMesh(), TorsoBone);
+		ChestStrap->SetStaticMesh(CubeMesh.Object);
+		ChestStrap->SetRelativeLocation(FVector(0.0f, 0.0f, 4.0f));
+		ChestStrap->SetRelativeRotation(FRotator(0.0f, 0.0f, -34.0f));
+		ChestStrap->SetRelativeScale3D(FVector(0.16f, 0.34f, 0.30f));
+		ChestStrap->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		ChestStrap->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(0.92f, 0.36f, 0.035f)));
+
+		WarningTag = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Graphic Hazard Tag"));
+		WarningTag->SetupAttachment(ChestHarness);
+		WarningTag->SetStaticMesh(CubeMesh.Object);
+		WarningTag->SetRelativeLocation(FVector(0.0f, 0.0f, -0.52f));
+		WarningTag->SetRelativeScale3D(FVector(0.16f, 0.38f, 0.10f));
+		WarningTag->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		WarningTag->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(1.0f, 0.70f, 0.05f)));
+
+		FName HeadBone = TorsoBone;
+		for (int32 BoneIndex = 0; BoneIndex < GetMesh()->GetNumBones(); ++BoneIndex)
+		{
+			const FName BoneName = GetMesh()->GetBoneName(BoneIndex);
+			if (BoneName.ToString().Contains(TEXT("head"), ESearchCase::IgnoreCase))
+			{
+				HeadBone = BoneName;
+				break;
+			}
+		}
+		HeadLamp = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Graphic Amber Head Lamp"));
+		HeadLamp->SetupAttachment(GetMesh(), HeadBone);
+		HeadLamp->SetStaticMesh(SphereMesh.Succeeded() ? SphereMesh.Object : CubeMesh.Object);
+		HeadLamp->SetRelativeLocation(FVector(8.0f, 0.0f, 13.0f));
+		HeadLamp->SetRelativeScale3D(FVector(0.10f, 0.12f, 0.09f));
+		HeadLamp->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		HeadLamp->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(1.0f, 0.72f, 0.08f)));
+
 		HazardStripe = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Graphic Hazard Stripe"));
 		HazardStripe->SetupAttachment(ChestHarness);
 		HazardStripe->SetStaticMesh(CubeMesh.Object);
@@ -182,6 +236,8 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 		MoveSpeed = 430.0f;
 		OutpostDamage = 3.0f;
 		GetMesh()->SetRelativeScale3D(FVector(0.88f));
+		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.19f, 0.25f, 0.28f)); }
+		if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.18f, 0.31f, 0.13f)); }
 		break;
 	case ETDZombieArchetype::Brute:
 		Health = 220.0f * WaveHealthScale;
@@ -196,12 +252,16 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 		{
 			ShoulderArmor->SetRelativeScale3D(FVector(0.31f, 0.48f, 0.23f));
 		}
+		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.30f, 0.37f, 0.38f)); }
+		if (UtilityBelt) { UtilityBelt->SetRelativeScale3D(FVector(0.44f, 0.34f, 0.12f)); }
 		break;
 	default:
 		Health = 70.0f * WaveHealthScale;
 		MoveSpeed = 285.0f;
 		OutpostDamage = 5.0f;
 		GetMesh()->SetRelativeScale3D(FVector(1.0f));
+		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.24f, 0.31f, 0.32f)); }
+		if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.23f, 0.39f, 0.16f)); }
 		break;
 	}
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;

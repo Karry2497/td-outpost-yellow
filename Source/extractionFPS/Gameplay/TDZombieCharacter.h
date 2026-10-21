@@ -48,6 +48,21 @@ private:
 	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
 	TObjectPtr<UStaticMeshComponent> HazardStripe;
 
+	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
+	TObjectPtr<UStaticMeshComponent> SalvagePack;
+
+	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
+	TObjectPtr<UStaticMeshComponent> UtilityBelt;
+
+	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
+	TObjectPtr<UStaticMeshComponent> ChestStrap;
+
+	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
+	TObjectPtr<UStaticMeshComponent> HeadLamp;
+
+	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
+	TObjectPtr<UStaticMeshComponent> WarningTag;
+
 	UPROPERTY(EditAnywhere, Category="Zombie|Combat", meta=(ClampMin="1.0"))
 	float Health = 70.0f;
 

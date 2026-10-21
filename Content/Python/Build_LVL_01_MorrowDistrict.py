@@ -124,13 +124,43 @@ def building(mesh, label, x, y, width, depth, floors, facade, interior, glass, t
                 wx = x + (index - 1) * min(760.0, width / 4.0)
                 if floor == 0 and index == 1:
                     continue  # keep the ground-floor doorway clear
-                box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), wx, yy, window_z, 210.0, 24.0, 150.0, glass)
+                box(mesh, "%s / window frame %s F%d %d" % (label, side, floor + 1, index + 1), wx, yy, window_z, 246.0, 30.0, 184.0, trim)
+                box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), wx, yy - (2.0 if side == "south" else -2.0), window_z, 210.0, 24.0, 150.0, glass)
                 box(mesh, "%s / window sill %s" % (label, side), wx, yy, window_z - 82.0, 250.0, 36.0, 18.0, trim)
+                if floor == 0:
+                    # Bright shop awnings and signboards make street-level
+                    # buildings feel lived in while staying outside the lane.
+                    box(mesh, "%s / shop awning %s %d" % (label, side, index + 1), wx, yy, window_z + 105.0, 260.0, 105.0, 22.0, trim)
         for side, xx, yaw in (("west", x - half_w - 12.0, 90.0), ("east", x + half_w + 12.0, 90.0)):
             for index in range(2):
                 wy = y + (index - 0.5) * min(900.0, depth / 3.0)
-                box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), xx, wy, window_z, 210.0, 24.0, 150.0, glass, yaw)
+                box(mesh, "%s / window frame %s F%d %d" % (label, side, floor + 1, index + 1), xx, wy, window_z, 246.0, 30.0, 184.0, trim, yaw)
+                box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), xx + (2.0 if side == "west" else -2.0), wy, window_z, 210.0, 24.0, 150.0, glass, yaw)
                 box(mesh, "%s / window sill %s" % (label, side), xx, wy, window_z - 82.0, 250.0, 36.0, 18.0, trim, yaw)
+
+    # Roof service gear adds a recognizable skyline and breaks up the flat
+    # roof silhouette. Each group stays compact so it does not affect paths.
+    for index, offset in enumerate((-0.28, 0.26)):
+        unit_x = x + width * offset
+        unit_y = y + depth * 0.16
+        box(mesh, "%s / rooftop AC housing %d" % (label, index + 1), unit_x, unit_y, height + 112.0, 620.0, 460.0, 160.0, trim)
+        box(mesh, "%s / rooftop AC grille %d" % (label, index + 1), unit_x, unit_y - 235.0, height + 114.0, 420.0, 18.0, 86.0, glass)
+        box(mesh, "%s / rooftop exhaust %d" % (label, index + 1), unit_x, unit_y + 300.0, height + 120.0, 120.0, 140.0, 160.0, interior)
+
+    # Color-blocked solar panels give the large roofs a readable graphic
+    # pattern from the fixed overhead defense camera.
+    panel_x = x
+    panel_y = y + depth * 0.18
+    box(mesh, label + " / solar service pad", panel_x, panel_y, height + 54.0, 2200.0, 1080.0, 22.0, trim)
+    for row, y_offset in enumerate((-245.0, 245.0)):
+        for column, x_offset in enumerate((-505.0, 505.0)):
+            box(mesh, "%s / rooftop solar %d %d" % (label, row + 1, column + 1), panel_x + x_offset, panel_y + y_offset, height + 75.0, 940.0, 390.0, 18.0, glass)
+            box(mesh, "%s / solar highlight %d %d" % (label, row + 1, column + 1), panel_x + x_offset, panel_y + y_offset - 155.0, height + 86.0, 780.0, 12.0, 8.0, trim)
+
+    # A small rooftop access hut and parapet details give the roof more than
+    # a single uninterrupted slab when viewed from the high gameplay camera.
+    box(mesh, label + " / rooftop access hut", x, y - depth * 0.23, height + 150.0, 480.0, 440.0, 260.0, facade)
+    box(mesh, label + " / rooftop access door", x, y - depth * 0.23 - 222.0, height + 145.0, 120.0, 18.0, 190.0, trim)
 
     # A few internal partitions create short sightlines and combat cover.
     if width > 2800.0:
@@ -141,8 +171,8 @@ def cover(mesh, label, x, y, width, depth, height, material):
     return box(mesh, label, x, y, height / 2.0, width, depth, height, material)
 
 
-def wrecked_car(mesh, label, x, y, yaw, rust, glass, concrete):
-    """Create a stationary, visibly damaged car from simple blockout meshes."""
+def wrecked_car(mesh, cylinder, label, x, y, yaw, rust, glass, concrete):
+    """Create a stylized, visibly wrecked car from distinct body and wheel forms."""
     box(mesh, label + " / bent body", x, y, 72.0, 500.0, 220.0, 120.0, rust, yaw)
     box(mesh, label + " / crushed cabin", x + math.cos(math.radians(yaw)) * 15.0, y + math.sin(math.radians(yaw)) * 15.0, 174.0, 245.0, 175.0, 88.0, rust, yaw - 5.0)
     box(mesh, label + " / shattered windscreen", x + math.cos(math.radians(yaw)) * 105.0, y + math.sin(math.radians(yaw)) * 105.0, 177.0, 105.0, 145.0, 12.0, glass, yaw)
@@ -151,10 +181,12 @@ def wrecked_car(mesh, label, x, y, yaw, rust, glass, concrete):
         angle = math.radians(yaw)
         wheel_x = x + dx * math.cos(angle) - dy * math.sin(angle)
         wheel_y = y + dx * math.sin(angle) + dy * math.cos(angle)
-        box(mesh, label + " / damaged tire", wheel_x, wheel_y, 48.0, 104.0, 70.0, 88.0, concrete, yaw)
+        spawn_mesh(cylinder, label + " / damaged tire", (wheel_x, wheel_y, 48.0), (0.45, 0.45, 0.43), unreal.Rotator(0.0, yaw, 90.0), concrete)
+        box(mesh, label + " / exposed wheel hub", wheel_x, wheel_y, 48.0, 38.0, 74.0, 38.0, rust, yaw)
 
     # A twisted bonnet and scattered concrete chunks sell the abandoned state.
     box(mesh, label + " / folded bonnet", x - math.cos(math.radians(yaw)) * 175.0, y - math.sin(math.radians(yaw)) * 175.0, 112.0, 180.0, 215.0, 32.0, concrete, yaw + 12.0)
+    box(mesh, label + " / bright salvage panel", x, y + 40.0, 139.0, 190.0, 18.0, 32.0, rust, yaw - 12.0)
 
 
 def main():
@@ -172,6 +204,12 @@ def main():
     cube = unreal.load_asset("/Engine/BasicShapes/Cube.Cube")
     if not cube:
         raise RuntimeError("Unreal basic shape meshes could not be loaded")
+    cylinder = unreal.load_asset("/Engine/BasicShapes/Cylinder.Cylinder")
+    if not cylinder:
+        raise RuntimeError("Unreal cylinder mesh could not be loaded")
+    sphere = unreal.load_asset("/Engine/BasicShapes/Sphere.Sphere")
+    if not sphere:
+        raise RuntimeError("Unreal sphere mesh could not be loaded")
     extraction_gate_class = unreal.load_class(None, "/Script/extractionFPS.TDExtractionGate")
     if not extraction_gate_class:
         raise RuntimeError("Compile the extractionFPS module before building the level gates")
@@ -264,16 +302,16 @@ def main():
     # The helicopter faces south. The separate meshes keep the landing zone
     # editable until a licensed final vehicle model is selected.
     heli_x = 1300.0
-    box(cube, "Extraction / helicopter fuselage", heli_x, -15500.0, 260.0, 500.0, 1000.0, 350.0, heli_paint)
-    box(cube, "Extraction / helicopter nose", heli_x, -16450.0, 250.0, 430.0, 350.0, 260.0, heli_paint)
+    spawn_mesh(sphere, "Extraction / rounded helicopter fuselage", (heli_x, -15500.0, 260.0), (5.0, 10.0, 3.5), material=heli_paint)
+    spawn_mesh(sphere, "Extraction / helicopter nose", (heli_x, -16450.0, 250.0), (3.0, 3.8, 2.3), material=heli_paint)
     box(cube, "Extraction / helicopter cockpit glass", heli_x, -16550.0, 285.0, 350.0, 100.0, 180.0, glass_mat)
-    box(cube, "Extraction / helicopter tail boom", heli_x, -14300.0, 220.0, 140.0, 800.0, 140.0, cover_mat)
-    box(cube, "Extraction / helicopter tail fin", heli_x, -14000.0, 330.0, 80.0, 180.0, 260.0, cover_mat)
-    box(cube, "Extraction / helicopter rotor mast", heli_x, -15500.0, 470.0, 45.0, 45.0, 200.0, rust)
+    spawn_mesh(cylinder, "Extraction / tapered helicopter tail boom", (heli_x, -14300.0, 220.0), (0.72, 0.72, 4.2), unreal.Rotator(0.0, 0.0, 90.0), heli_paint)
+    box(cube, "Extraction / helicopter tail fin", heli_x, -14000.0, 330.0, 80.0, 180.0, 260.0, extraction_gate_mat)
+    spawn_mesh(cylinder, "Extraction / helicopter rotor mast", (heli_x, -15500.0, 470.0), (0.20, 0.20, 1.7), material=rust)
     box(cube, "Extraction / helicopter main rotor A", heli_x, -15500.0, 580.0, 2600.0, 110.0, 24.0, rust)
     box(cube, "Extraction / helicopter main rotor B", heli_x, -15500.0, 585.0, 110.0, 2600.0, 24.0, rust)
     for x in (heli_x - 520.0, heli_x + 520.0):
-        box(cube, "Extraction / helicopter landing skid", x, -15500.0, 90.0, 35.0, 1200.0, 30.0, rust)
+        spawn_mesh(cylinder, "Extraction / helicopter landing skid", (x, -15500.0, 90.0), (0.16, 0.16, 6.0), unreal.Rotator(0.0, 0.0, 90.0), rust)
 
     # Three-storey blocks seal the district around the compound, but their
     # inner corners align with the outer edge of the firing walk. This keeps
@@ -291,9 +329,9 @@ def main():
     building(cube, "Outpost / attached rear support building", 0.0, block_inner_edge + rear_depth / 2.0, width=3800.0, depth=rear_depth, floors=3, facade=facade_blue, interior=interior, glass=glass_mat, trim=trim_blue)
 
     # Abandoned wrecks are static blockout props; no vehicles are in operation.
-    wrecked_car(cube, "Wreck / west approach", -5800.0, 220.0, 0.0, rust, glass_mat, concrete)
-    wrecked_car(cube, "Wreck / east approach", 5800.0, -240.0, 0.0, rust, glass_mat, concrete)
-    wrecked_car(cube, "Wreck / south approach", -260.0, -5650.0, 90.0, rust, glass_mat, concrete)
+    wrecked_car(cube, cylinder, "Wreck / west approach", -5800.0, 220.0, 0.0, rust, glass_mat, concrete)
+    wrecked_car(cube, cylinder, "Wreck / east approach", 5800.0, -240.0, 0.0, rust, glass_mat, concrete)
+    wrecked_car(cube, cylinder, "Wreck / south approach", -260.0, -5650.0, 90.0, rust, glass_mat, concrete)
 
     # The open outpost occupies the old intersection and blocks all three roads.
     # Its complete wall seals the courtyard; connected buildings close the flanks.
@@ -319,6 +357,15 @@ def main():
     # their 30 m runs along Y and avoids relying on rotated component scaling.
     box(cube, "Outpost / perimeter west", -compound_half, 0.0, wall_height / 2.0, wall_thickness, compound_half * 2.0, wall_height, outpost_mat)
     box(cube, "Outpost / perimeter east", compound_half, 0.0, wall_height / 2.0, wall_thickness, compound_half * 2.0, wall_height, outpost_mat)
+
+    # Flush amber bands make the three road-facing walls stand out from the
+    # distant top-down camera without adding cover to the open firing walk.
+    band_z = 160.0
+    south_band_y = -compound_half - wall_thickness / 2.0 - 2.0
+    for side, x in (("west", -(south_gate_width / 2.0 + south_segment / 2.0)), ("east", south_gate_width / 2.0 + south_segment / 2.0)):
+        box(cube, "Outpost / amber south wall band " + side, x, south_band_y, band_z, south_segment, 8.0, 36.0, build_pad_mark)
+    for side, x in (("west", -compound_half - wall_thickness / 2.0 - 2.0), ("east", compound_half + wall_thickness / 2.0 + 2.0)):
+        box(cube, "Outpost / amber side wall band " + side, x, 0.0, band_z, 8.0, compound_half * 2.0, 36.0, build_pad_mark)
 
     # A connected firing walk reaches the three road-facing walls. The rear
     # section joins the ring to keep the walk connected but has no firing merlons.

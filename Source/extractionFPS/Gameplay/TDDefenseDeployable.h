@@ -11,7 +11,7 @@
 class UStaticMeshComponent;
 class USceneComponent;
 
-/** Small, readable placeholder defense actors for the first playable loop. */
+/** Stylized, readable tower-defense defenses assembled from reusable mesh parts. */
 UCLASS()
 class EXTRACTIONFPS_API ATDDefenseDeployable : public AActor
 {
@@ -37,6 +37,15 @@ private:
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UStaticMeshComponent> TopMesh;
+
+	UPROPERTY(VisibleAnywhere, Category="Defense|Model")
+	TArray<TObjectPtr<UStaticMeshComponent>> TurretModelParts;
+
+	UPROPERTY(VisibleAnywhere, Category="Defense|Model")
+	TArray<TObjectPtr<UStaticMeshComponent>> BotModelParts;
+
+	UPROPERTY(VisibleAnywhere, Category="Defense|Model")
+	TArray<TObjectPtr<UStaticMeshComponent>> WireModelParts;
 
 	ETDDefenseType DefenseType = ETDDefenseType::Turret;
 	FTimerHandle AttackTimer;
