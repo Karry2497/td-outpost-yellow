@@ -13,11 +13,8 @@ void AShooterGameMode::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// create the UI
-	if ((ShooterUI = CreateWidget<UShooterUI>(UGameplayStatics::GetPlayerController(GetWorld(), 0), ShooterUIClass)))
-	{
-		ShooterUI->AddToViewport(0);
-	}
+	// The old shooter score UI is intentionally omitted. Level 1 uses the
+	// tower-defense wave, credits and outpost status HUD instead.
 
 	// create each additional local player.
 	// Player 0 will be created automatically as part of regular game init

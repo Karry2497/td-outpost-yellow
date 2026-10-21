@@ -5,6 +5,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "InputMappingContext.h"
+#include "Camera/CameraActor.h"
+#include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "GameFramework/PlayerStart.h"
 #include "ShooterCharacter.h"
@@ -18,6 +20,36 @@
 void AShooterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// This project is now a tower-defense game: keep the camera fixed above the
+	// battlefield and remove the old shooter pawn from the play session.
+	bAutoManageActiveCameraTarget = false;
+	if (GetWorld() && GetWorld()->GetAuthGameMode<AextractionFPSGameMode>())
+	{
+		if (APawn* StartingPawn = GetPawn())
+		{
+			if (AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(StartingPawn))
+			{
+				ShooterCharacter->OnDestroyed.RemoveDynamic(this, &AShooterPlayerController::OnPawnDestroyed);
+				ShooterCharacter->OnBulletCountUpdated.RemoveDynamic(this, &AShooterPlayerController::OnBulletCountUpdated);
+				ShooterCharacter->OnDamaged.RemoveDynamic(this, &AShooterPlayerController::OnPawnDamaged);
+			}
+			UnPossess();
+			StartingPawn->Destroy();
+		}
+
+		FActorSpawnParameters CameraSpawnParams;
+		CameraSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		if (ACameraActor* DefenseCamera = GetWorld()->SpawnActor<ACameraActor>(
+			ACameraActor::StaticClass(), FVector(0.0f, 0.0f, 26000.0f), FRotator(-90.0f, 0.0f, 0.0f), CameraSpawnParams))
+		{
+			UCameraComponent* CameraComponent = DefenseCamera->GetCameraComponent();
+			CameraComponent->SetProjectionMode(ECameraProjectionMode::Orthographic);
+			CameraComponent->OrthoWidth = 34000.0f;
+			SetViewTarget(DefenseCamera);
+		}
+	}
+
 	// TD builds are issued against the world point under the mouse cursor.
 	bShowMouseCursor = true;
 	bEnableClickEvents = true;
@@ -73,18 +105,6 @@ void AShooterPlayerController::SetupInputComponent()
 			}
 		}
 
-		// create the bullet counter widget and add it to the screen
-		BulletCounterUI = CreateWidget<UShooterBulletCounterUI>(this, BulletCounterUIClass);
-
-		if (BulletCounterUI)
-		{
-			BulletCounterUI->AddToPlayerScreen(0);
-
-		} else {
-
-			UE_LOG(LogextractionFPS, Error, TEXT("Could not spawn bullet counter widget."));
-
-		}
 	}
 }
 
@@ -104,16 +124,7 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	case 2: GameMode->PurchaseDefense(ETDDefenseType::GuardBot, PlaceLocation, Forward.Rotation()); break;
 	case 3: GameMode->PurchaseDefense(ETDDefenseType::BarbedWire, PlaceLocation, Forward.Rotation()); break;
 	case 4: GameMode->RepairOutpost(); break;
-	case 5:
-		if (AShooterCharacter* ShooterCharacter = Cast<AShooterCharacter>(PlayerPawn))
-		{
-			GameMode->CallAirstrike(ShooterCharacter->GetWeaponTargetLocation());
-		}
-		else
-		{
-			GameMode->CallAirstrike(PlayerPawn->GetActorLocation() + Forward * 1500.0f);
-		}
-		break;
+	case 5: GameMode->CallAirstrike(PlaceLocation); break;
 	case 6: GameMode->UpgradeNearestTower(PlaceLocation); break;
 	case 7: GameMode->UpgradeOutpostWalls(); break;
 	default: break;
