@@ -1,4 +1,4 @@
-"""Build a first-pass playable greybox for the Extraction FPS project.
+"""Build the stylized, playable first level for the Extraction TD project.
 
 Run from Unreal Editor's Python console with:
     py "<ProjectDir>/Content/Python/Build_LVL_01_MorrowDistrict.py"
@@ -77,7 +77,7 @@ def wall(mesh, label, x, y, z, length, height, yaw, concrete, thickness=30.0):
     return box(mesh, label, x, y, z, length, thickness, height, concrete, yaw)
 
 
-def building(mesh, label, x, y, width, depth, floors, concrete, interior, glass):
+def building(mesh, label, x, y, width, depth, floors, facade, interior, glass, trim):
     """Create a hollow, enterable shell with doors centered on two sides."""
     floor_height = 360.0
     height = floors * floor_height
@@ -88,15 +88,32 @@ def building(mesh, label, x, y, width, depth, floors, concrete, interior, glass)
     # Front and rear facades use 260 cm door openings for readable routes.
     for side, yy in (("south", y - half_d), ("north", y + half_d)):
         segment = (width - 260.0) / 2.0
-        wall(mesh, label + " / " + side + " wall L", x - (width + 260.0) / 4.0, yy, height / 2.0, segment, height, 0.0, concrete)
-        wall(mesh, label + " / " + side + " wall R", x + (width + 260.0) / 4.0, yy, height / 2.0, segment, height, 0.0, concrete)
+        wall(mesh, label + " / " + side + " wall L", x - (width + 260.0) / 4.0, yy, height / 2.0, segment, height, 0.0, facade)
+        wall(mesh, label + " / " + side + " wall R", x + (width + 260.0) / 4.0, yy, height / 2.0, segment, height, 0.0, facade)
 
     # Side walls stay solid to make each block read as an urban mass.
     for side, xx in (("west", x - half_w), ("east", x + half_w)):
-        wall(mesh, label + " / " + side + " wall", xx, y, height / 2.0, depth, height, 90.0, concrete)
+        wall(mesh, label + " / " + side + " wall", xx, y, height / 2.0, depth, height, 90.0, facade)
 
     # Roof slabs are low enough for the template's standard jump to reach.
-    box(mesh, label + " / roof", x, y, height + 20.0, width, depth, 40.0, concrete)
+    box(mesh, label + " / roof", x, y, height + 20.0, width, depth, 40.0, facade)
+    # Broad corner pilasters and thin floor bands make each storey readable
+    # from the raised camera and give each city block its own bold color.
+    for sx in (-1.0, 1.0):
+        for sy in (-1.0, 1.0):
+            box(mesh, label + " / corner trim", x + sx * (half_w - 28.0), y + sy * (half_d - 28.0), height / 2.0, 58.0, 58.0, height, trim)
+    for floor in range(floors):
+        band_z = (floor + 1) * floor_height - 30.0
+        for side_y in (-1.0, 1.0):
+            box(mesh, label + " / floor band", x, y + side_y * (half_d + 18.0), band_z, width - 40.0, 26.0, 24.0, trim)
+        for side_x in (-1.0, 1.0):
+            box(mesh, label + " / floor band", x + side_x * (half_w + 18.0), y, band_z, 26.0, depth - 40.0, 24.0, trim)
+    # A light roof edge makes the skyline easy to parse without adding more
+    # gameplay cover or changing the open courtyard.
+    for side_y in (-1.0, 1.0):
+        box(mesh, label + " / roof edge", x, y + side_y * (half_d - 36.0), height + 48.0, width, 36.0, 16.0, trim)
+    for side_x in (-1.0, 1.0):
+        box(mesh, label + " / roof edge", x + side_x * (half_w - 36.0), y, height + 48.0, 36.0, depth, 16.0, trim)
 
     # Dark glass panes are deliberately simple blockout windows. Their shallow
     # boxes sit on the four facades and make every storey readable at a distance.
@@ -108,14 +125,16 @@ def building(mesh, label, x, y, width, depth, floors, concrete, interior, glass)
                 if floor == 0 and index == 1:
                     continue  # keep the ground-floor doorway clear
                 box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), wx, yy, window_z, 210.0, 24.0, 150.0, glass)
+                box(mesh, "%s / window sill %s" % (label, side), wx, yy, window_z - 82.0, 250.0, 36.0, 18.0, trim)
         for side, xx, yaw in (("west", x - half_w - 12.0, 90.0), ("east", x + half_w + 12.0, 90.0)):
             for index in range(2):
                 wy = y + (index - 0.5) * min(900.0, depth / 3.0)
                 box(mesh, "%s / window %s F%d %d" % (label, side, floor + 1, index + 1), xx, wy, window_z, 210.0, 24.0, 150.0, glass, yaw)
+                box(mesh, "%s / window sill %s" % (label, side), xx, wy, window_z - 82.0, 250.0, 36.0, 18.0, trim, yaw)
 
     # A few internal partitions create short sightlines and combat cover.
     if width > 2800.0:
-        box(mesh, label + " / interior partition", x + width * 0.20, y, 150.0, 30.0, depth * 0.55, 300.0, concrete)
+        box(mesh, label + " / interior partition", x + width * 0.20, y, 150.0, 30.0, depth * 0.55, 300.0, facade)
 
 
 def cover(mesh, label, x, y, width, depth, height, material):
@@ -157,17 +176,28 @@ def main():
     if not extraction_gate_class:
         raise RuntimeError("Compile the extractionFPS module before building the level gates")
 
-    concrete = make_color_material("M_Blockout_Concrete", (0.24, 0.28, 0.30, 1.0))
-    outpost_mat = make_color_material("M_Blockout_OutpostMasonry", (0.30, 0.22, 0.15, 1.0))
-    asphalt = make_color_material("M_Blockout_Asphalt", (0.10, 0.12, 0.13, 1.0))
-    pavement = make_color_material("M_Blockout_Pavement", (0.38, 0.39, 0.36, 1.0))
-    build_pad_mat = make_color_material("M_Blockout_BuildPad", (0.95, 0.48, 0.035, 1.0))
-    build_pad_mark = make_color_material("M_Blockout_BuildPadMark", (1.0, 0.82, 0.28, 1.0))
-    extraction_gate_mat = make_color_material("M_Blockout_ExtractionGate", (0.9, 0.12, 0.025, 1.0))
-    interior = make_color_material("M_Blockout_Interior", (0.30, 0.31, 0.28, 1.0))
-    cover_mat = make_color_material("M_Blockout_Cover", (0.42, 0.31, 0.19, 1.0))
-    glass_mat = make_color_material("M_Blockout_Window", (0.035, 0.10, 0.14, 1.0))
-    rust = make_color_material("M_Blockout_RustedMetal", (0.22, 0.12, 0.075, 1.0))
+    concrete = make_color_material("M_Stylized_Concrete", (0.68, 0.72, 0.68, 1.0))
+    outpost_mat = make_color_material("M_Stylized_OutpostMasonry", (0.40, 0.29, 0.20, 1.0))
+    asphalt = make_color_material("M_Stylized_Asphalt", (0.105, 0.15, 0.17, 1.0))
+    pavement = make_color_material("M_Stylized_Pavement", (0.62, 0.66, 0.61, 1.0))
+    build_pad_mat = make_color_material("M_Stylized_BuildPad", (0.96, 0.40, 0.055, 1.0))
+    build_pad_mark = make_color_material("M_Stylized_BuildPadMark", (1.0, 0.83, 0.27, 1.0))
+    extraction_gate_mat = make_color_material("M_Stylized_ExtractionGate", (0.96, 0.22, 0.08, 1.0))
+    interior = make_color_material("M_Stylized_Interior", (0.34, 0.38, 0.36, 1.0))
+    cover_mat = make_color_material("M_Stylized_Cover", (0.44, 0.31, 0.20, 1.0))
+    glass_mat = make_color_material("M_Stylized_Window", (0.045, 0.22, 0.26, 1.0))
+    rust = make_color_material("M_Stylized_RustedMetal", (0.22, 0.15, 0.12, 1.0))
+    facade_blue = make_color_material("M_Stylized_FacadeBlue", (0.18, 0.48, 0.60, 1.0))
+    facade_coral = make_color_material("M_Stylized_FacadeCoral", (0.88, 0.38, 0.27, 1.0))
+    facade_ochre = make_color_material("M_Stylized_FacadeOchre", (0.84, 0.63, 0.30, 1.0))
+    facade_mint = make_color_material("M_Stylized_FacadeMint", (0.33, 0.63, 0.49, 1.0))
+    trim_blue = make_color_material("M_Stylized_TrimBlue", (0.10, 0.31, 0.39, 1.0))
+    trim_coral = make_color_material("M_Stylized_TrimCoral", (0.58, 0.22, 0.17, 1.0))
+    trim_ochre = make_color_material("M_Stylized_TrimOchre", (0.57, 0.39, 0.16, 1.0))
+    trim_mint = make_color_material("M_Stylized_TrimMint", (0.17, 0.39, 0.30, 1.0))
+    road_mark = make_color_material("M_Stylized_RoadMark", (0.95, 0.76, 0.31, 1.0))
+    helipad = make_color_material("M_Stylized_Helipad", (0.30, 0.43, 0.40, 1.0))
+    heli_paint = make_color_material("M_Stylized_HelicopterPaint", (0.13, 0.39, 0.35, 1.0))
 
     # A 240 x 200 m playable district; the raised perimeter stops accidental exits.
     box(cube, "Blockout / base", 0.0, 0.0, -100.0, 24000.0, 20000.0, 200.0, pavement)
@@ -192,6 +222,13 @@ def main():
     road(cube, "Road / west dead-end approach", -6825.0, 0.0, 10350.0, 1800.0, 0.0, asphalt)
     road(cube, "Road / east dead-end approach", 6825.0, 0.0, 10350.0, 1800.0, 0.0, asphalt)
     road(cube, "Road / south dead-end approach", 0.0, -5825.0, 8350.0, 1800.0, 90.0, asphalt)
+    # Faded center dashes make each of the three zombie lanes easy to read.
+    for i, x in enumerate(range(-10800, -2600, 1000)):
+        box(cube, "Road marking / west dash %02d" % i, x, 0.0, 2.0, 430.0, 34.0, 4.0, road_mark)
+    for i, x in enumerate(range(2600, 10801, 1000)):
+        box(cube, "Road marking / east dash %02d" % i, x, 0.0, 2.0, 430.0, 34.0, 4.0, road_mark)
+    for i, y in enumerate(range(-10000, -2500, 1000)):
+        box(cube, "Road marking / south dash %02d" % i, 0.0, y, 2.0, 34.0, 430.0, 4.0, road_mark)
 
     # Six clear defense pads sit on the shoulders, keeping all three zombie
     # lanes open while giving players more useful tower coverage choices.
@@ -211,20 +248,24 @@ def main():
     # and a deliberately simple helicopter silhouette for the greybox.
     box(cube, "Extraction / outer staging ground", 0.0, -14000.0, -100.0, 8000.0, 8000.0, 200.0, pavement)
     road(cube, "Extraction / access road beyond city", 0.0, -12000.0, 7600.0, 1800.0, 90.0, asphalt)
-    box(cube, "Extraction / helicopter landing pad", 0.0, -15000.0, 30.0, 6000.0, 6000.0, 60.0, concrete)
+    box(cube, "Extraction / helicopter landing pad", 0.0, -15000.0, 30.0, 6000.0, 6000.0, 60.0, helipad)
     for x in (-2900.0, 2900.0):
         box(cube, "Extraction / pad edge", x, -15000.0, 80.0, 120.0, 6000.0, 40.0, cover_mat)
     for y in (-17900.0, -12100.0):
         box(cube, "Extraction / pad edge", 0.0, y, 80.0, 6000.0, 120.0, 40.0, cover_mat)
     # H-shaped touchdown mark; reserve its eastern half for the parked aircraft.
     for x in (-1700.0, -100.0):
-        box(cube, "Extraction / H landing mark leg", x, -15000.0, 72.0, 180.0, 1500.0, 24.0, cover_mat)
-    box(cube, "Extraction / H landing mark bar", -900.0, -15000.0, 72.0, 1500.0, 180.0, 24.0, cover_mat)
+        box(cube, "Extraction / H landing mark leg", x, -15000.0, 72.0, 180.0, 1500.0, 24.0, build_pad_mark)
+    box(cube, "Extraction / H landing mark bar", -900.0, -15000.0, 72.0, 1500.0, 180.0, 24.0, build_pad_mark)
+    # Large corner chevrons and a boundary stripe make the extraction pad pop.
+    for sx in (-1.0, 1.0):
+        for sy in (-1.0, 1.0):
+            box(cube, "Extraction / corner marker", sx * 2550.0, -15000.0 + sy * 2550.0, 74.0, 360.0, 100.0, 24.0, extraction_gate_mat, yaw=45.0 * sx * sy)
     # The helicopter faces south. The separate meshes keep the landing zone
     # editable until a licensed final vehicle model is selected.
     heli_x = 1300.0
-    box(cube, "Extraction / helicopter fuselage", heli_x, -15500.0, 260.0, 500.0, 1000.0, 350.0, cover_mat)
-    box(cube, "Extraction / helicopter nose", heli_x, -16450.0, 250.0, 430.0, 350.0, 260.0, cover_mat)
+    box(cube, "Extraction / helicopter fuselage", heli_x, -15500.0, 260.0, 500.0, 1000.0, 350.0, heli_paint)
+    box(cube, "Extraction / helicopter nose", heli_x, -16450.0, 250.0, 430.0, 350.0, 260.0, heli_paint)
     box(cube, "Extraction / helicopter cockpit glass", heli_x, -16550.0, 285.0, 350.0, 100.0, 180.0, glass_mat)
     box(cube, "Extraction / helicopter tail boom", heli_x, -14300.0, 220.0, 140.0, 800.0, 140.0, cover_mat)
     box(cube, "Extraction / helicopter tail fin", heli_x, -14000.0, 330.0, 80.0, 180.0, 260.0, cover_mat)
@@ -242,12 +283,12 @@ def main():
     block_depth = 10000.0 - block_inner_edge
     block_x = (12000.0 + block_inner_edge) / 2.0
     block_y = (10000.0 + block_inner_edge) / 2.0
-    building(cube, "District / northwest connected block", -block_x, block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
-    building(cube, "District / northeast connected block", block_x, block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
-    building(cube, "District / southwest connected block", -block_x, -block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
-    building(cube, "District / southeast connected block", block_x, -block_y, block_width, block_depth, 3, concrete, interior, glass_mat)
+    building(cube, "District / northwest connected block", -block_x, block_y, block_width, block_depth, 3, facade_blue, interior, glass_mat, trim_blue)
+    building(cube, "District / northeast connected block", block_x, block_y, block_width, block_depth, 3, facade_ochre, interior, glass_mat, trim_ochre)
+    building(cube, "District / southwest connected block", -block_x, -block_y, block_width, block_depth, 3, facade_mint, interior, glass_mat, trim_mint)
+    building(cube, "District / southeast connected block", block_x, -block_y, block_width, block_depth, 3, facade_coral, interior, glass_mat, trim_coral)
     rear_depth = 2000.0
-    building(cube, "Outpost / attached rear support building", 0.0, block_inner_edge + rear_depth / 2.0, width=3800.0, depth=rear_depth, floors=3, concrete=concrete, interior=interior, glass=glass_mat)
+    building(cube, "Outpost / attached rear support building", 0.0, block_inner_edge + rear_depth / 2.0, width=3800.0, depth=rear_depth, floors=3, facade=facade_blue, interior=interior, glass=glass_mat, trim=trim_blue)
 
     # Abandoned wrecks are static blockout props; no vehicles are in operation.
     wrecked_car(cube, "Wreck / west approach", -5800.0, 220.0, 0.0, rust, glass_mat, concrete)
