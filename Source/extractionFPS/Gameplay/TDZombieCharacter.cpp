@@ -132,8 +132,9 @@ ATDZombieCharacter::ATDZombieCharacter()
 		}
 	}
 
-	GetMesh()->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
+	// The character capsule provides movement and hit collision; the skeletal
+	// mesh does not need a second physics body for this top-down defense game.
+	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
 	GetCharacterMovement()->bOrientRotationToMovement = true;
 	bUseControllerRotationYaw = false;

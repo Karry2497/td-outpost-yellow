@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "TimerManager.h"
 #include "extractionFPSGameMode.h"
 #include "TDDefenseDeployable.generated.h"
 
@@ -24,7 +25,8 @@ public:
 	bool CanUpgrade() const { return DefenseType == ETDDefenseType::Turret && UpgradeLevel < 3; }
 
 protected:
-	virtual void Tick(float DeltaSeconds) override;
+	void AttackNearestZombie();
+	void ScheduleAttackTimer();
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -37,7 +39,7 @@ private:
 	TObjectPtr<UStaticMeshComponent> TopMesh;
 
 	ETDDefenseType DefenseType = ETDDefenseType::Turret;
-	float TickAccumulator = 0.0f;
+	FTimerHandle AttackTimer;
 	float AttackInterval = 0.75f;
 	float AttackRadius = 2000.0f;
 	float AttackDamage = 30.0f;

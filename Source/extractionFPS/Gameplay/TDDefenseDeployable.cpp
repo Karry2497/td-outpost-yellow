@@ -10,11 +10,12 @@
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
+#include "TimerManager.h"
 #include "UObject/ConstructorHelpers.h"
 
 ATDDefenseDeployable::ATDDefenseDeployable()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 	SceneRoot = CreateDefaultSubobject<USceneComponent>(TEXT("Root"));
 	SetRootComponent(SceneRoot);
 
@@ -84,6 +85,7 @@ void ATDDefenseDeployable::Configure(ETDDefenseType NewType)
 		TopMesh->SetRelativeScale3D(FVector(0.6f, 0.6f, 0.35f));
 		break;
 	}
+	ScheduleAttackTimer();
 }
 
 bool ATDDefenseDeployable::Upgrade()
@@ -92,11 +94,11 @@ bool ATDDefenseDeployable::Upgrade()
 	{
 		return false;
 	}
-
 	++UpgradeLevel;
 	AttackDamage *= 1.35f;
 	AttackInterval = FMath::Max(0.28f, AttackInterval * 0.88f);
 	AttackRadius *= 1.10f;
+	ScheduleAttackTimer();
 	TopMesh->SetRelativeScale3D(FVector(0.6f + 0.09f * UpgradeLevel));
 	TopMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 1.05f + 0.12f * UpgradeLevel));
 
@@ -111,15 +113,26 @@ bool ATDDefenseDeployable::Upgrade()
 	return true;
 }
 
-void ATDDefenseDeployable::Tick(float DeltaSeconds)
+void ATDDefenseDeployable::ScheduleAttackTimer()
 {
-	Super::Tick(DeltaSeconds);
-	TickAccumulator += DeltaSeconds;
-	if (TickAccumulator < AttackInterval || !GetWorld())
+	if (UWorld* World = GetWorld())
+	{
+		World->GetTimerManager().ClearTimer(AttackTimer);
+		World->GetTimerManager().SetTimer(AttackTimer, this,
+			&ATDDefenseDeployable::AttackNearestZombie, AttackInterval, true, AttackInterval);
+	}
+	else
+	{
+		AttackTimer.Invalidate();
+	}
+}
+
+void ATDDefenseDeployable::AttackNearestZombie()
+{
+	if (!GetWorld())
 	{
 		return;
 	}
-	TickAccumulator = 0.0f;
 
 	TArray<AActor*> Zombies;
 	UGameplayStatics::GetAllActorsOfClass(GetWorld(), ATDZombieCharacter::StaticClass(), Zombies);
