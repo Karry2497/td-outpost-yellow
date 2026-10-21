@@ -19,6 +19,9 @@ class EXTRACTIONFPS_API ATDDefenseDeployable : public AActor
 public:
 	ATDDefenseDeployable();
 	void Configure(ETDDefenseType NewType);
+	bool Upgrade();
+	int32 GetUpgradeLevel() const { return UpgradeLevel; }
+	bool CanUpgrade() const { return DefenseType == ETDDefenseType::Turret && UpgradeLevel < 3; }
 
 protected:
 	virtual void Tick(float DeltaSeconds) override;
@@ -38,4 +41,5 @@ private:
 	float AttackInterval = 0.75f;
 	float AttackRadius = 2000.0f;
 	float AttackDamage = 30.0f;
+	int32 UpgradeLevel = 0;
 };

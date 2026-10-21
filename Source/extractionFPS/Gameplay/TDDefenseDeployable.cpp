@@ -86,6 +86,31 @@ void ATDDefenseDeployable::Configure(ETDDefenseType NewType)
 	}
 }
 
+bool ATDDefenseDeployable::Upgrade()
+{
+	if (!CanUpgrade())
+	{
+		return false;
+	}
+
+	++UpgradeLevel;
+	AttackDamage *= 1.35f;
+	AttackInterval = FMath::Max(0.28f, AttackInterval * 0.88f);
+	AttackRadius *= 1.10f;
+	TopMesh->SetRelativeScale3D(FVector(0.6f + 0.09f * UpgradeLevel));
+	TopMesh->SetRelativeLocation(FVector(0.0f, 0.0f, 1.05f + 0.12f * UpgradeLevel));
+
+	if (UMaterialInstanceDynamic* DynamicMaterial = Cast<UMaterialInstanceDynamic>(TopMesh->GetMaterial(0)))
+	{
+		const FLinearColor TierColor = UpgradeLevel == 1
+			? FLinearColor(1.0f, 0.72f, 0.08f)
+			: (UpgradeLevel == 2 ? FLinearColor(1.0f, 0.36f, 0.04f) : FLinearColor(0.2f, 1.0f, 0.35f));
+		DynamicMaterial->SetVectorParameterValue(TEXT("Color"), TierColor);
+		DynamicMaterial->SetVectorParameterValue(TEXT("BaseColor"), TierColor);
+	}
+	return true;
+}
+
 void ATDDefenseDeployable::Tick(float DeltaSeconds)
 {
 	Super::Tick(DeltaSeconds);

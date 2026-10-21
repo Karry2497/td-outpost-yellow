@@ -3,6 +3,8 @@
 #include "extractionFPSGameMode.h"
 #include "Gameplay/TDZombieCharacter.h"
 #include "Gameplay/TDDefenseDeployable.h"
+#include "Gameplay/TDExtractionGate.h"
+#include "Gameplay/TDExtractionZone.h"
 #include "Variant_Shooter/ShooterCharacter.h"
 #include "Variant_Shooter/Weapons/ShooterWeapon.h"
 #include "Engine/Engine.h"
@@ -20,6 +22,18 @@ AextractionFPSGameMode::AextractionFPSGameMode()
 void AextractionFPSGameMode::BeginPlay()
 {
 	Super::BeginPlay();
+
+	TArray<AActor*> GateActors;
+	UGameplayStatics::GetAllActorsOfClass(this, ATDExtractionGate::StaticClass(), GateActors);
+	for (AActor* Actor : GateActors)
+	{
+		if (ATDExtractionGate* Gate = Cast<ATDExtractionGate>(Actor))
+		{
+			ExtractionGates.Add(Gate);
+		}
+	}
+	ExtractionZone = GetWorld()->SpawnActor<ATDExtractionZone>(
+		ATDExtractionZone::StaticClass(), FVector(0.0f, -15000.0f, 150.0f), FRotator::ZeroRotator);
 
 	if (GEngine)
 	{
@@ -41,7 +55,7 @@ void AextractionFPSGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AextractionFPSGameMode::StartNextWave()
 {
-	if (bOutpostOverrun)
+	if (bOutpostOverrun || bLevelComplete || bExtractionUnlocked || CurrentWave >= MaxWaves)
 	{
 		return;
 	}
@@ -176,6 +190,48 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 	return true;
 }
 
+bool AextractionFPSGameMode::UpgradeNearestTower(const FVector& Location)
+{
+	TArray<AActor*> Defenses;
+	UGameplayStatics::GetAllActorsOfClass(this, ATDDefenseDeployable::StaticClass(), Defenses);
+	ATDDefenseDeployable* NearestTower = nullptr;
+	float NearestDistanceSquared = FMath::Square(1400.0f);
+	for (AActor* Actor : Defenses)
+	{
+		ATDDefenseDeployable* Defense = Cast<ATDDefenseDeployable>(Actor);
+		if (!Defense || !Defense->CanUpgrade())
+		{
+			continue;
+		}
+		const float DistanceSquared = FVector::DistSquared2D(Location, Defense->GetActorLocation());
+		if (DistanceSquared < NearestDistanceSquared)
+		{
+			NearestDistanceSquared = DistanceSquared;
+			NearestTower = Defense;
+		}
+	}
+
+	if (!NearestTower)
+	{
+		ShowDefenseStatus(TEXT("Select a turret within range to upgrade"), FColor::Red);
+		return false;
+	}
+	const int32 Cost = 50 * (NearestTower->GetUpgradeLevel() + 1);
+	if (Credits < Cost)
+	{
+		ShowDefenseStatus(FString::Printf(TEXT("Tower upgrade costs %d credits"), Cost), FColor::Red);
+		return false;
+	}
+	if (!NearestTower->Upgrade())
+	{
+		return false;
+	}
+	Credits -= Cost;
+	ShowDefenseStatus(FString::Printf(TEXT("TURRET UPGRADE %d/3 | -%d credits | %d left"),
+		NearestTower->GetUpgradeLevel(), Cost, Credits), FColor(255, 195, 50));
+	return true;
+}
+
 bool AextractionFPSGameMode::RepairOutpost()
 {
 	constexpr int32 Cost = 40;
@@ -261,8 +317,49 @@ void AextractionFPSGameMode::CheckForWaveCompletion()
 			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor(60, 240, 255),
 				TEXT("AREA CLEAR  |  10 seconds until the next wave"));
 		}
-		GetWorldTimerManager().SetTimer(WaveTimer, this, &AextractionFPSGameMode::StartNextWave, 10.0f, false);
+		if (CurrentWave >= MaxWaves)
+		{
+			UnlockExtraction();
+		}
+		else
+		{
+			GetWorldTimerManager().SetTimer(WaveTimer, this, &AextractionFPSGameMode::StartNextWave, 10.0f, false);
+		}
 	}
+}
+
+void AextractionFPSGameMode::UnlockExtraction()
+{
+	if (bOutpostOverrun || bExtractionUnlocked)
+	{
+		return;
+	}
+	bExtractionUnlocked = true;
+
+	for (ATDExtractionGate* Gate : ExtractionGates)
+	{
+		if (IsValid(Gate))
+		{
+			Gate->OpenGate();
+		}
+	}
+	if (IsValid(ExtractionZone))
+	{
+		ExtractionZone->SetActive(true);
+	}
+	ShowDefenseStatus(TEXT("ALL 5 WAVES CLEARED  |  SOUTH EXIT OPEN — REACH THE HELICOPTER"), FColor(0, 230, 255));
+}
+
+void AextractionFPSGameMode::CompleteExtraction()
+{
+	if (!bExtractionUnlocked || bOutpostOverrun || bLevelComplete)
+	{
+		return;
+	}
+	bLevelComplete = true;
+	GetWorldTimerManager().ClearTimer(WaveTimer);
+	GetWorldTimerManager().ClearTimer(SpawnTimer);
+	ShowDefenseStatus(TEXT("EXTRACTION COMPLETE  |  LEVEL 1 CLEARED"), FColor(120, 255, 80));
 }
 
 void AextractionFPSGameMode::RefreshDefenseHUD()
@@ -272,11 +369,13 @@ void AextractionFPSGameMode::RefreshDefenseHUD()
 		return;
 	}
 	const FString Status = FString::Printf(
-		TEXT("WAVE %d    CREDITS %d    OUTPOST %d%%    ZOMBIES %d"),
-		CurrentWave, Credits, FMath::RoundToInt(OutpostHealth / 10.0f),
+		TEXT("WAVE %d/%d    CREDITS %d    OUTPOST %d%%    ZOMBIES %d"),
+		CurrentWave, MaxWaves, Credits, FMath::RoundToInt(OutpostHealth / 10.0f),
 		ActiveZombies.Num() + ZombiesLeftToSpawn);
 	GEngine->AddOnScreenDebugMessage(41001, 0.6f, FColor(225, 250, 255), Status, false, FVector2D(1.25f, 1.25f));
 	GEngine->AddOnScreenDebugMessage(41002, 0.6f, FColor(255, 190, 85),
-		TEXT("BUY: 1 Turret 60 | 2 Bot 90 | 3 Wire 35 | 4 Repair 40 | 5 Strike 120 | 6 Ammo 25 | 7 Walls 80"),
+		bExtractionUnlocked
+			? TEXT("OBJECTIVE: Reach the helicopter outside town")
+			: TEXT("BUY: 1 Turret 60 | 2 Bot 90 | 3 Wire 35 | 4 Repair 40 | 5 Strike 120 | 6 Upgrade 50+ | 7 Walls 80"),
 		false, FVector2D(1.0f, 1.0f));
 }

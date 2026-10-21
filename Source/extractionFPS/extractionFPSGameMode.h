@@ -9,6 +9,8 @@
 
 class ATDZombieCharacter;
 class ATDDefenseDeployable;
+class ATDExtractionGate;
+class ATDExtractionZone;
 class APawn;
 
 UENUM(BlueprintType)
@@ -39,6 +41,7 @@ private:
 	void SpawnNextZombie();
 	void CheckForWaveCompletion();
 	void RefreshDefenseHUD();
+	void UnlockExtraction();
 
 	FTimerHandle WaveTimer;
 	FTimerHandle SpawnTimer;
@@ -51,16 +54,23 @@ private:
 	float OutpostDamageMultiplier = 1.0f;
 	int32 WallUpgradeLevel = 0;
 	int32 NextSpawnLane = 0;
+	static constexpr int32 MaxWaves = 5;
 	bool bOutpostOverrun = false;
+	bool bExtractionUnlocked = false;
+	bool bLevelComplete = false;
+	TObjectPtr<ATDExtractionZone> ExtractionZone;
+	TArray<TObjectPtr<ATDExtractionGate>> ExtractionGates;
 
 public:
 	void NotifyZombieKilled(ATDZombieCharacter* Zombie);
 	void DamageOutpost(float Damage);
 	bool PurchaseDefense(ETDDefenseType Type, const FVector& Location, const FRotator& Rotation);
+	bool UpgradeNearestTower(const FVector& Location);
 	bool RepairOutpost();
 	bool UpgradeOutpostWalls();
 	bool CallAirstrike(const FVector& Center);
 	bool RefillPlayerAmmo(APawn* PlayerPawn);
+	void CompleteExtraction();
 	void ShowDefenseStatus(const FString& Message, const FColor& Color = FColor::White) const;
 
 	UFUNCTION(BlueprintPure, Category="Defense")

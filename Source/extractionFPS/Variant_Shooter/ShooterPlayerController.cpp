@@ -18,6 +18,10 @@
 void AShooterPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
+	// TD builds are issued against the world point under the mouse cursor.
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
 }
 
 void AShooterPlayerController::SetupInputComponent()
@@ -88,11 +92,11 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 {
 	AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
 	APawn* PlayerPawn = GetPawn();
-	if (!GameMode || !PlayerPawn)
+	if (!GameMode)
 	{
 		return;
 	}
-	const FVector Forward = PlayerPawn->GetActorForwardVector();
+	const FVector Forward = PlayerPawn ? PlayerPawn->GetActorForwardVector() : GetControlRotation().Vector();
 	const FVector PlaceLocation = GetDefensePlacementLocation();
 	switch (Hotkey)
 	{
@@ -110,7 +114,7 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 			GameMode->CallAirstrike(PlayerPawn->GetActorLocation() + Forward * 1500.0f);
 		}
 		break;
-	case 6: GameMode->RefillPlayerAmmo(PlayerPawn); break;
+	case 6: GameMode->UpgradeNearestTower(PlaceLocation); break;
 	case 7: GameMode->UpgradeOutpostWalls(); break;
 	default: break;
 	}
@@ -118,6 +122,12 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 
 FVector AShooterPlayerController::GetDefensePlacementLocation() const
 {
+	FHitResult CursorHit;
+	if (GetHitResultUnderCursor(ECC_Visibility, false, CursorHit))
+	{
+		return CursorHit.ImpactPoint + FVector(0.0f, 0.0f, 8.0f);
+	}
+
 	FVector ViewLocation;
 	FRotator ViewRotation;
 	GetPlayerViewPoint(ViewLocation, ViewRotation);
@@ -135,7 +145,8 @@ FVector AShooterPlayerController::GetDefensePlacementLocation() const
 		return PlayerPawn->GetActorLocation() + PlayerPawn->GetActorForwardVector() * 420.0f
 			- FVector(0.0f, 0.0f, 70.0f);
 	}
-	return FVector::ZeroVector;
+	const FVector FlatForward = FVector(ViewRotation.Vector().X, ViewRotation.Vector().Y, 0.0f).GetSafeNormal();
+	return ViewLocation + FlatForward * 1200.0f;
 }
 
 void AShooterPlayerController::DefenseHotkey1() { UseDefenseHotkey(1); }

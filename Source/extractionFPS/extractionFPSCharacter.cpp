@@ -4,6 +4,7 @@
 #include "Animation/AnimInstance.h"
 #include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
+#include "Components/PointLightComponent.h"
 #include "Components/SkeletalMeshComponent.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
@@ -31,7 +32,7 @@ AextractionFPSCharacter::AextractionFPSCharacter()
 	CameraBoom->SetupAttachment(GetCapsuleComponent());
 	// High, angled battlefield view: the player stays directly controllable,
 	// while the wider camera can keep the outpost and nearby approaches readable.
-	CameraBoom->TargetArmLength = 1200.0f;
+	CameraBoom->TargetArmLength = 850.0f;
 	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 110.0f);
 	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->bDoCollisionTest = true;
@@ -41,6 +42,17 @@ AextractionFPSCharacter::AextractionFPSCharacter()
 	FirstPersonCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	FirstPersonCameraComponent->bUsePawnControlRotation = false;
 	FirstPersonCameraComponent->FieldOfView = 58.0f;
+
+	// Keep the third-person character readable against the bright blockout ground.
+	// Lighting channel 1 is shared only by this character and this fill light.
+	PlayerFillLight = CreateDefaultSubobject<UPointLightComponent>(TEXT("Player Fill Light"));
+	PlayerFillLight->SetupAttachment(GetCapsuleComponent());
+	PlayerFillLight->SetRelativeLocation(FVector(0.0f, 0.0f, 35.0f));
+	PlayerFillLight->SetIntensity(6000.0f);
+	PlayerFillLight->SetAttenuationRadius(260.0f);
+	PlayerFillLight->SetLightColor(FLinearColor(0.82f, 0.9f, 1.0f));
+	PlayerFillLight->SetCastShadows(false);
+	PlayerFillLight->SetLightingChannels(true, true, false);
 
 	// configure the character comps
 	GetMesh()->SetOwnerNoSee(false);
@@ -60,10 +72,18 @@ void AextractionFPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// Blueprint children can retain an older inherited spring-arm default, so
-	// enforce the tactical camera framing when the player actually spawns.
-	CameraBoom->TargetArmLength = 1200.0f;
+	// Blueprint children can retain old camera and visibility overrides. Keep
+	// the high tactical view, but close the camera enough that the player remains
+	// easy to see and aim around in the middle of the screen.
+	CameraBoom->TargetArmLength = 850.0f;
 	CameraBoom->bDoCollisionTest = false;
+	GetMesh()->SetOwnerNoSee(false);
+	GetMesh()->SetOnlyOwnerSee(false);
+	GetMesh()->SetVisibility(true, true);
+	GetMesh()->SetHiddenInGame(false, true);
+	GetMesh()->SetLightingChannels(true, true, false);
+	FirstPersonMesh->SetVisibility(false, true);
+	FirstPersonMesh->SetHiddenInGame(true, true);
 
 	// Start at a fixed-feeling high angle, like a 3D mobile tower-defense game.
 	// Mouse yaw remains free so aiming and movement still feel direct.

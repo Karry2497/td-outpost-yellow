@@ -10,6 +10,7 @@
 class UInputComponent;
 class USkeletalMeshComponent;
 class UCameraComponent;
+class UPointLightComponent;
 class USpringArmComponent;
 class UInputAction;
 struct FInputActionValue;
@@ -35,6 +36,10 @@ class AextractionFPSCharacter : public ACharacter
 	/** Third-person follow camera (legacy name kept for existing gameplay code). */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	UCameraComponent* FirstPersonCameraComponent;
+
+	/** Soft fill light on the player so their silhouette remains readable in dark areas. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
+	UPointLightComponent* PlayerFillLight;
 
 protected:
 
