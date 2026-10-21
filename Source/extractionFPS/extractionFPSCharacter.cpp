@@ -31,7 +31,7 @@ AextractionFPSCharacter::AextractionFPSCharacter()
 	CameraBoom->SetupAttachment(GetCapsuleComponent());
 	// High, angled battlefield view: the player stays directly controllable,
 	// while the wider camera can keep the outpost and nearby approaches readable.
-	CameraBoom->TargetArmLength = 650.0f;
+	CameraBoom->TargetArmLength = 1200.0f;
 	CameraBoom->SocketOffset = FVector(0.0f, 0.0f, 110.0f);
 	CameraBoom->bUsePawnControlRotation = true;
 	CameraBoom->bDoCollisionTest = true;
@@ -60,12 +60,17 @@ void AextractionFPSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Blueprint children can retain an older inherited spring-arm default, so
+	// enforce the tactical camera framing when the player actually spawns.
+	CameraBoom->TargetArmLength = 1200.0f;
+	CameraBoom->bDoCollisionTest = false;
+
 	// Start at a fixed-feeling high angle, like a 3D mobile tower-defense game.
 	// Mouse yaw remains free so aiming and movement still feel direct.
 	if (Controller)
 	{
 		FRotator ControlRotation = Controller->GetControlRotation();
-		ControlRotation.Pitch = -48.0f;
+		ControlRotation.Pitch = -58.0f;
 		ControlRotation.Yaw = GetActorRotation().Yaw;
 		Controller->SetControlRotation(ControlRotation);
 	}
