@@ -16,6 +16,8 @@
 #include "extractionFPSGameMode.h"
 #include "InputCoreTypes.h"
 #include "Engine/World.h"
+#include "Gameplay/TDGameUI.h"
+#include "Kismet/KismetSystemLibrary.h"
 
 void AShooterPlayerController::BeginPlay()
 {
@@ -54,6 +56,15 @@ void AShooterPlayerController::BeginPlay()
 	bShowMouseCursor = true;
 	bEnableClickEvents = true;
 	bEnableMouseOverEvents = true;
+	if (GetWorld() && GetWorld()->GetAuthGameMode<AextractionFPSGameMode>())
+	{
+		TDGameUI = CreateWidget<UTDGameUI>(this, UTDGameUI::StaticClass());
+		if (TDGameUI)
+		{
+			TDGameUI->AddToViewport(10);
+			ShowMainMenu();
+		}
+	}
 }
 
 void AShooterPlayerController::SetupInputComponent()
@@ -70,6 +81,8 @@ void AShooterPlayerController::SetupInputComponent()
 		InputComponent->BindKey(EKeys::Five, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey5);
 		InputComponent->BindKey(EKeys::Six, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey6);
 		InputComponent->BindKey(EKeys::Seven, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey7);
+		InputComponent->BindKey(EKeys::B, IE_Pressed, this, &AShooterPlayerController::ToggleCommandMenu).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AShooterPlayerController::TogglePauseMenu).bExecuteWhenPaused = true;
 		// add the input mapping contexts
 		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(GetLocalPlayer()))
 		{
@@ -112,7 +125,7 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 {
 	AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
 	APawn* PlayerPawn = GetPawn();
-	if (!GameMode)
+	if (!GameMode || !GameMode->HasGameStarted())
 	{
 		return;
 	}
@@ -129,6 +142,92 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	case 7: GameMode->UpgradeOutpostWalls(); break;
 	default: break;
 	}
+}
+
+void AShooterPlayerController::ExecuteDefenseAction(uint8 Hotkey)
+{
+	UseDefenseHotkey(Hotkey);
+	UpdateTDHUD();
+}
+
+void AShooterPlayerController::ShowMainMenu()
+{
+	if (!TDGameUI) return;
+	SetPause(true);
+	TDGameUI->ShowMainMenu();
+	bShowMouseCursor = true;
+	SetInputMode(FInputModeUIOnly());
+}
+
+void AShooterPlayerController::ShowHowTo()
+{
+	AextractionFPSGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
+	if (!TDGameUI || !GM) return;
+	bHelpReturnsToMain = !GM->HasGameStarted();
+	SetPause(true);
+	TDGameUI->ShowHelp();
+	bShowMouseCursor = true;
+	SetInputMode(FInputModeUIOnly());
+}
+
+void AShooterPlayerController::ReturnToCurrentMenu()
+{
+	if (!TDGameUI) return;
+	if (bHelpReturnsToMain) ShowMainMenu();
+	else TogglePauseMenu();
+}
+
+void AShooterPlayerController::StartDefense()
+{
+	if (AextractionFPSGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr) GM->StartDefense();
+	CloseOverlayAndResume();
+}
+
+void AShooterPlayerController::CloseOverlayAndResume()
+{
+	if (!TDGameUI) return;
+	TDGameUI->ShowHUD();
+	SetPause(false);
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+}
+
+void AShooterPlayerController::ToggleCommandMenu()
+{
+	if (!TDGameUI) return;
+	AextractionFPSGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
+	if (!GM || !GM->HasGameStarted()) return;
+	if (IsPaused()) { CloseOverlayAndResume(); return; }
+	SetPause(true);
+	TDGameUI->ShowCommandMenu();
+	bShowMouseCursor = true;
+	SetInputMode(FInputModeUIOnly());
+}
+
+void AShooterPlayerController::TogglePauseMenu()
+{
+	if (!TDGameUI) return;
+	AextractionFPSGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
+	if (!GM || !GM->HasGameStarted()) return;
+	if (IsPaused()) { CloseOverlayAndResume(); return; }
+	SetPause(true);
+	TDGameUI->ShowPauseMenu();
+	bShowMouseCursor = true;
+	SetInputMode(FInputModeUIOnly());
+}
+
+void AShooterPlayerController::UpdateTDHUD()
+{
+	if (TDGameUI) TDGameUI->RefreshDisplay();
+}
+
+void AShooterPlayerController::RestartLevel()
+{
+	SetPause(false);
+	UGameplayStatics::OpenLevel(this, FName(TEXT("LVL_01_MorrowDistrict_Walled")));
 }
 
 FVector AShooterPlayerController::GetDefensePlacementLocation() const

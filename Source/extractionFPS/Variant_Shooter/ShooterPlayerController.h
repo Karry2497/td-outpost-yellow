@@ -9,6 +9,7 @@
 class UInputMappingContext;
 class AShooterCharacter;
 class UShooterBulletCounterUI;
+class UTDGameUI;
 
 /**
  *  Simple PlayerController for a first person shooter game
@@ -61,6 +62,10 @@ protected:
 	/** Team ID for this player */
 	uint8 TeamByte = 0;
 
+	UPROPERTY()
+	TObjectPtr<UTDGameUI> TDGameUI;
+	bool bHelpReturnsToMain = false;
+
 	/** Tags that identify each team for PlayerStart selection upon respawning */
 	UPROPERTY(EditAnywhere, Category="Shooter|Team")
 	TArray<FName> TeamTags;
@@ -101,6 +106,16 @@ protected:
 	void DefenseHotkey7();
 
 public:
+	void StartDefense();
+	void ExecuteDefenseAction(uint8 Hotkey);
+	void ToggleCommandMenu();
+	void TogglePauseMenu();
+	void ShowMainMenu();
+	void ShowHowTo();
+	void ReturnToCurrentMenu();
+	void CloseOverlayAndResume();
+	void RestartLevel();
+	void UpdateTDHUD();
 
 	/** Assigns a team ID to this player */
 	void SetTeam(uint8 Team);

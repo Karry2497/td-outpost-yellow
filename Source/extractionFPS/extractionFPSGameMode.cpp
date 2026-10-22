@@ -5,6 +5,8 @@
 #include "Gameplay/TDDefenseDeployable.h"
 #include "Gameplay/TDExtractionGate.h"
 #include "Gameplay/TDExtractionZone.h"
+#include "Gameplay/TDGameUI.h"
+#include "Variant_Shooter/ShooterPlayerController.h"
 #include "Variant_Shooter/ShooterCharacter.h"
 #include "Variant_Shooter/Weapons/ShooterWeapon.h"
 #include "Engine/Engine.h"
@@ -35,14 +37,19 @@ void AextractionFPSGameMode::BeginPlay()
 	ExtractionZone = GetWorld()->SpawnActor<ATDExtractionZone>(
 		ATDExtractionZone::StaticClass(), FVector(0.0f, -12000.0f, 120.0f), FRotator::ZeroRotator);
 
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 6.0f, FColor::Yellow,
-			TEXT("Protect the outpost. Spend credits on defenses, repairs and supplies."));
-	}
-
-	GetWorldTimerManager().SetTimer(WaveTimer, this, &AextractionFPSGameMode::StartNextWave, 8.0f, false);
 	GetWorldTimerManager().SetTimer(HUDTimer, this, &AextractionFPSGameMode::RefreshDefenseHUD, 0.5f, true, 0.0f);
+}
+
+void AextractionFPSGameMode::StartDefense()
+{
+	if (bGameStarted)
+	{
+		ShowDefenseStatus(TEXT("DEFENSE RESUMED"), FColor(120, 255, 80));
+		return;
+	}
+	bGameStarted = true;
+	ShowDefenseStatus(TEXT("PREPARE FOR INCOMING WAVES"), FColor(0, 230, 255));
+	GetWorldTimerManager().SetTimer(WaveTimer, this, &AextractionFPSGameMode::StartNextWave, 5.0f, false);
 }
 
 void AextractionFPSGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -55,18 +62,14 @@ void AextractionFPSGameMode::EndPlay(const EEndPlayReason::Type EndPlayReason)
 
 void AextractionFPSGameMode::StartNextWave()
 {
-	if (bOutpostOverrun || bLevelComplete || bExtractionUnlocked || CurrentWave >= MaxWaves)
+	if (!bGameStarted || bOutpostOverrun || bLevelComplete || bExtractionUnlocked || CurrentWave >= MaxWaves)
 	{
 		return;
 	}
 	++CurrentWave;
 	ZombiesLeftToSpawn = 4 + CurrentWave * 2;
 
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor(255, 220, 0),
-			FString::Printf(TEXT("WAVE %d  |  %d zombies inbound"), CurrentWave, ZombiesLeftToSpawn));
-	}
+	ShowDefenseStatus(FString::Printf(TEXT("WAVE %d INBOUND  •  %d ZOMBIES"), CurrentWave, ZombiesLeftToSpawn), FColor(255, 220, 0));
 
 	SpawnNextZombie();
 }
@@ -120,11 +123,7 @@ void AextractionFPSGameMode::NotifyZombieKilled(ATDZombieCharacter* Zombie)
 {
 	ActiveZombies.Remove(Zombie);
 	Credits += 10;
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.5f, FColor(130, 255, 40),
-			FString::Printf(TEXT("+10 CREDITS  |  %d available"), Credits));
-	}
+	ShowDefenseStatus(FString::Printf(TEXT("ZOMBIE ELIMINATED  •  +10 CREDITS  •  %d AVAILABLE"), Credits), FColor(130, 255, 40));
 	CheckForWaveCompletion();
 }
 
@@ -135,11 +134,7 @@ void AextractionFPSGameMode::DamageOutpost(float Damage)
 		return;
 	}
 	OutpostHealth = FMath::Max(0.0f, OutpostHealth - Damage * OutpostDamageMultiplier);
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(41003, 2.0f, FColor::Red,
-			FString::Printf(TEXT("OUTPOST HIT  |  Integrity: %d%%"), FMath::RoundToInt(OutpostHealth / 10.0f)));
-	}
+	ShowDefenseStatus(FString::Printf(TEXT("OUTPOST HIT  •  INTEGRITY %d%%"), FMath::RoundToInt(OutpostHealth / 10.0f)), FColor::Red);
 	if (OutpostHealth <= 0.0f)
 	{
 		bOutpostOverrun = true;
@@ -345,12 +340,10 @@ bool AextractionFPSGameMode::RefillPlayerAmmo(APawn* PlayerPawn)
 	return true;
 }
 
-void AextractionFPSGameMode::ShowDefenseStatus(const FString& Message, const FColor& Color) const
+void AextractionFPSGameMode::ShowDefenseStatus(const FString& Message, const FColor& Color)
 {
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.0f, Color, Message);
-	}
+	LastDefenseStatus = Message;
+	if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(UGameplayStatics::GetPlayerController(this, 0))) PC->UpdateTDHUD();
 }
 
 void AextractionFPSGameMode::CheckForWaveCompletion()
@@ -358,11 +351,7 @@ void AextractionFPSGameMode::CheckForWaveCompletion()
 	if (!bOutpostOverrun && ZombiesLeftToSpawn == 0 && ActiveZombies.IsEmpty())
 	{
 		GetWorldTimerManager().ClearTimer(SpawnTimer);
-		if (GEngine)
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 4.0f, FColor(60, 240, 255),
-				TEXT("AREA CLEAR  |  10 seconds until the next wave"));
-		}
+		ShowDefenseStatus(TEXT("AREA CLEAR  •  NEXT WAVE IN 10 SECONDS"), FColor(60, 240, 255));
 		if (CurrentWave >= MaxWaves)
 		{
 			UnlockExtraction();
@@ -410,18 +399,5 @@ void AextractionFPSGameMode::CompleteExtraction()
 
 void AextractionFPSGameMode::RefreshDefenseHUD()
 {
-	if (!GEngine)
-	{
-		return;
-	}
-	const FString Status = FString::Printf(
-		TEXT("WAVE %d/%d    CREDITS %d    OUTPOST %d%%    ZOMBIES %d"),
-		CurrentWave, MaxWaves, Credits, FMath::RoundToInt(OutpostHealth / 10.0f),
-		ActiveZombies.Num() + ZombiesLeftToSpawn);
-	GEngine->AddOnScreenDebugMessage(41001, 0.6f, FColor(225, 250, 255), Status, false, FVector2D(1.25f, 1.25f));
-	GEngine->AddOnScreenDebugMessage(41002, 0.6f, FColor(255, 190, 85),
-		bExtractionUnlocked
-			? TEXT("OBJECTIVE: Reach the helicopter outside town")
-			: TEXT("BUY: 1 Turret 60 | 2 Bot 90 | 3 Wire 35 | 4 Repair 40 | 5 Strike 120 | 6 Upgrade 50+ | 7 Walls 80"),
-		false, FVector2D(1.0f, 1.0f));
+	if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(UGameplayStatics::GetPlayerController(this, 0))) PC->UpdateTDHUD();
 }

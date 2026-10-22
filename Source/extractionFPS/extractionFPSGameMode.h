@@ -56,10 +56,12 @@ private:
 	int32 NextSpawnLane = 0;
 	static constexpr int32 MaxWaves = 5;
 	bool bOutpostOverrun = false;
+	bool bGameStarted = false;
 	bool bExtractionUnlocked = false;
 	bool bLevelComplete = false;
 	TObjectPtr<ATDExtractionZone> ExtractionZone;
 	TArray<TObjectPtr<ATDExtractionGate>> ExtractionGates;
+	FString LastDefenseStatus = TEXT("DEFEND THE OUTPOST  •  Build defenses from the command menu");
 
 public:
 	void NotifyZombieKilled(ATDZombieCharacter* Zombie);
@@ -71,7 +73,17 @@ public:
 	bool CallAirstrike(const FVector& Center);
 	bool RefillPlayerAmmo(APawn* PlayerPawn);
 	void CompleteExtraction();
-	void ShowDefenseStatus(const FString& Message, const FColor& Color = FColor::White) const;
+	void ShowDefenseStatus(const FString& Message, const FColor& Color = FColor::White);
+	void StartDefense();
+
+	UFUNCTION(BlueprintPure, Category="Defense")
+	int32 GetZombieCount() const { return ActiveZombies.Num() + ZombiesLeftToSpawn; }
+	UFUNCTION(BlueprintPure, Category="Defense")
+	int32 GetMaxWaves() const { return MaxWaves; }
+	UFUNCTION(BlueprintPure, Category="Defense")
+	FString GetLastDefenseStatus() const { return LastDefenseStatus; }
+	UFUNCTION(BlueprintPure, Category="Defense")
+	bool HasGameStarted() const { return bGameStarted; }
 
 	UFUNCTION(BlueprintPure, Category="Defense")
 	int32 GetCurrentWave() const { return CurrentWave; }
