@@ -100,8 +100,17 @@ void UTDGameUI::BuildPage()
 {
 	if (!WidgetTree) return;
 	WaveText = nullptr; CreditsText = nullptr; ZombieText = nullptr; HealthText = nullptr; StatusText = nullptr; HealthBar = nullptr;
-	UCanvasPanel* Root = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("TDRoot"));
-	WidgetTree->RootWidget = Root;
+	UCanvasPanel* Root = RootCanvas;
+	if (!Root)
+	{
+		Root = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("TDRoot"));
+		RootCanvas = Root;
+		WidgetTree->RootWidget = Root;
+	}
+	else
+	{
+		Root->ClearChildren();
+	}
 	if (CurrentPage == EPage::HUD)
 	{
 		UBorder* TopPanel = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());

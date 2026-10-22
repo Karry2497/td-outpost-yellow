@@ -8,6 +8,7 @@
 
 class UTextBlock;
 class UProgressBar;
+class UCanvasPanel;
 
 UCLASS()
 class EXTRACTIONFPS_API UTDGameUI : public UUserWidget
@@ -25,6 +26,8 @@ public:
 private:
 	enum class EPage : uint8 { Main, Help, Command, Pause, HUD };
 	EPage CurrentPage = EPage::Main;
+	UPROPERTY()
+	TObjectPtr<UCanvasPanel> RootCanvas;
 	TObjectPtr<UTextBlock> WaveText;
 	TObjectPtr<UTextBlock> CreditsText;
 	TObjectPtr<UTextBlock> ZombieText;
