@@ -16,6 +16,10 @@ First playable greybox for a simple, 3D tower-defense extraction game. There is 
 
 Use roughly 75% of the linked tower-defense video as inspiration for the tower-and-upgrade feel, while keeping this game's own yellow-zombie, post-apocalyptic outpost and helicopter-extraction identity. The first pass keeps the choices readable: three deployables, three turret upgrade tiers, and simple on-screen credit feedback. Turret upgrades increase damage, fire rate and range; tier costs are 50, 100 and 150 credits. Six marked shoulder pads (two per approach) suggest useful positions without narrowing the zombie lanes. This is a design target based on the user's stated focus; the linked video could not be loaded directly for detailed shot-by-shot reference.
 
+## Eagle Airstrike
+
+Press 5 to open a paused target-selection menu, then choose the west, east or south approach with a button or keys 1–3. The strike deals 250 damage to every zombie assigned to that lane, regardless of distance, and costs 240 credits. Escape cancels selection without spending credits; selecting an empty lane also does not charge.
+
 ## Greybox footprint
 
 - Playable footprint: 240 m east-west by 200 m north-south.

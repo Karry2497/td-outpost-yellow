@@ -100,6 +100,12 @@ void AextractionFPSGameMode::SpawnNextZombie()
 	ATDZombieCharacter* Zombie = GetWorld()->SpawnActor<ATDZombieCharacter>(ATDZombieCharacter::StaticClass(), SpawnTransform);
 	if (Zombie)
 	{
+		static const FName ZombieLaneTags[] = {
+			FName(TEXT("ZombieLane_West")),
+			FName(TEXT("ZombieLane_East")),
+			FName(TEXT("ZombieLane_South"))
+		};
+		Zombie->Tags.Add(ZombieLaneTags[Lane]);
 		Zombie->SetOutpostTarget(WallTargets[Lane]);
 		ETDZombieArchetype Archetype = ETDZombieArchetype::Walker;
 		const float VariantRoll = FMath::FRand();
@@ -294,12 +300,22 @@ bool AextractionFPSGameMode::RepairOutpost()
 	return true;
 }
 
-bool AextractionFPSGameMode::CallAirstrike(const FVector& Center)
+bool AextractionFPSGameMode::CallAirstrike(uint8 LaneIndex)
 {
-	constexpr int32 Cost = 120;
+	constexpr int32 Cost = 240;
 	if (Credits < Cost)
 	{
-		ShowDefenseStatus(TEXT("Airstrike costs 120 credits"), FColor::Red);
+		ShowDefenseStatus(TEXT("Airstrike costs 240 credits"), FColor::Red);
+		return false;
+	}
+	static const FName ZombieLaneTags[] = {
+		FName(TEXT("ZombieLane_West")),
+		FName(TEXT("ZombieLane_East")),
+		FName(TEXT("ZombieLane_South"))
+	};
+	if (LaneIndex >= UE_ARRAY_COUNT(ZombieLaneTags))
+	{
+		ShowDefenseStatus(TEXT("Invalid airstrike lane"), FColor::Red);
 		return false;
 	}
 	TArray<AActor*> Zombies;
@@ -307,7 +323,7 @@ bool AextractionFPSGameMode::CallAirstrike(const FVector& Center)
 	int32 Hits = 0;
 	for (AActor* Actor : Zombies)
 	{
-		if (Actor && FVector::DistSquared2D(Actor->GetActorLocation(), Center) < FMath::Square(1800.0f))
+		if (Actor && Actor->Tags.Contains(ZombieLaneTags[LaneIndex]))
 		{
 			Actor->TakeDamage(250.0f, FDamageEvent(), nullptr, this);
 			++Hits;
@@ -315,11 +331,13 @@ bool AextractionFPSGameMode::CallAirstrike(const FVector& Center)
 	}
 	if (Hits == 0)
 	{
-		ShowDefenseStatus(TEXT("No zombies in the airstrike zone"), FColor::Red);
+		static const TCHAR* LaneNames[] = { TEXT("west"), TEXT("east"), TEXT("south") };
+		ShowDefenseStatus(FString::Printf(TEXT("No zombies on the %s approach"), LaneNames[LaneIndex]), FColor::Red);
 		return false;
 	}
 	Credits -= Cost;
-	ShowDefenseStatus(FString::Printf(TEXT("EAGLE AIRSTRIKE | %d targets hit | %d credits"), Hits, Credits), FColor(0, 230, 255));
+	static const TCHAR* LaneNames[] = { TEXT("WEST"), TEXT("EAST"), TEXT("SOUTH") };
+	ShowDefenseStatus(FString::Printf(TEXT("EAGLE AIRSTRIKE | %s LANE | %d targets hit | %d credits"), LaneNames[LaneIndex], Hits, Credits), FColor(0, 230, 255));
 	return true;
 }
 

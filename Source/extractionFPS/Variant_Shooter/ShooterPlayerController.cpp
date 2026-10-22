@@ -111,6 +111,9 @@ void AShooterPlayerController::SetupInputComponent()
 		InputComponent->BindKey(EKeys::Five, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey5);
 		InputComponent->BindKey(EKeys::Six, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey6);
 		InputComponent->BindKey(EKeys::Seven, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey7);
+		InputComponent->BindKey(EKeys::One, IE_Pressed, this, &AShooterPlayerController::AirstrikeLane1).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Two, IE_Pressed, this, &AShooterPlayerController::AirstrikeLane2).bExecuteWhenPaused = true;
+		InputComponent->BindKey(EKeys::Three, IE_Pressed, this, &AShooterPlayerController::AirstrikeLane3).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AShooterPlayerController::TurretPlacementClick);
 		InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AShooterPlayerController::TurretPlacementCancelClick);
 		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &AShooterPlayerController::CameraNorth);
@@ -230,6 +233,11 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	{
 		return;
 	}
+	if (bAirstrikeTargetPending)
+	{
+		if (Hotkey >= 1 && Hotkey <= 3) ConfirmAirstrikeTarget(Hotkey - 1);
+		return;
+	}
 	if (Hotkey == 1)
 	{
 		BeginTurretPlacement();
@@ -242,11 +250,46 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	case 2: GameMode->PurchaseDefense(ETDDefenseType::GuardBot, PlaceLocation, Forward.Rotation()); break;
 	case 3: GameMode->PurchaseDefense(ETDDefenseType::BarbedWire, PlaceLocation, Forward.Rotation()); break;
 	case 4: GameMode->RepairOutpost(); break;
-	case 5: GameMode->CallAirstrike(PlaceLocation); break;
+	case 5: BeginAirstrikeTargetSelection(); return;
 	case 6: GameMode->UpgradeNearestTower(PlaceLocation); break;
 	case 7: GameMode->UpgradeOutpostWalls(); break;
 	default: break;
 	}
+}
+
+void AShooterPlayerController::BeginAirstrikeTargetSelection()
+{
+	AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
+	if (!GameMode || !GameMode->HasGameStarted() || !TDGameUI) return;
+	if (!GameMode->CanAffordAirstrike())
+	{
+		GameMode->ShowDefenseStatus(TEXT("AIRSTRIKE COSTS 240 CREDITS"), FColor::Red);
+		UpdateTDHUD();
+		return;
+	}
+	bAirstrikeTargetPending = true;
+	SetPause(true);
+	TDGameUI->ShowAirstrikeTargetMenu();
+	bShowMouseCursor = true;
+	SetInputMode(FInputModeUIOnly());
+}
+
+void AShooterPlayerController::ConfirmAirstrikeTarget(uint8 LaneIndex)
+{
+	if (!bAirstrikeTargetPending) return;
+	bAirstrikeTargetPending = false;
+	if (AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr)
+	{
+		GameMode->CallAirstrike(LaneIndex);
+	}
+	CloseOverlayAndResume();
+}
+
+void AShooterPlayerController::CancelAirstrikeTarget()
+{
+	if (!bAirstrikeTargetPending) return;
+	bAirstrikeTargetPending = false;
+	CloseOverlayAndResume();
 }
 
 void AShooterPlayerController::BeginTurretPlacement()
@@ -449,6 +492,7 @@ void AShooterPlayerController::CloseOverlayAndResume()
 void AShooterPlayerController::ToggleCommandMenu()
 {
 	if (!TDGameUI) return;
+	if (bAirstrikeTargetPending) return;
 	AextractionFPSGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
 	if (!GM || !GM->HasGameStarted()) return;
 	if (IsPaused()) { CloseOverlayAndResume(); return; }
@@ -466,6 +510,11 @@ void AShooterPlayerController::TogglePauseMenu()
 	if (bTurretPlacementPending)
 	{
 		CancelTurretPlacement();
+		return;
+	}
+	if (bAirstrikeTargetPending)
+	{
+		CancelAirstrikeTarget();
 		return;
 	}
 	if (IsPaused()) { CloseOverlayAndResume(); return; }
@@ -522,6 +571,9 @@ void AShooterPlayerController::DefenseHotkey4() { UseDefenseHotkey(4); }
 void AShooterPlayerController::DefenseHotkey5() { UseDefenseHotkey(5); }
 void AShooterPlayerController::DefenseHotkey6() { UseDefenseHotkey(6); }
 void AShooterPlayerController::DefenseHotkey7() { UseDefenseHotkey(7); }
+void AShooterPlayerController::AirstrikeLane1() { if (bAirstrikeTargetPending) ConfirmAirstrikeTarget(0); }
+void AShooterPlayerController::AirstrikeLane2() { if (bAirstrikeTargetPending) ConfirmAirstrikeTarget(1); }
+void AShooterPlayerController::AirstrikeLane3() { if (bAirstrikeTargetPending) ConfirmAirstrikeTarget(2); }
 
 void AShooterPlayerController::OnPossess(APawn* InPawn)
 {

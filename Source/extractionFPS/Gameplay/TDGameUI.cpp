@@ -36,6 +36,7 @@ void UTDGameUI::ShowMainMenu() { CurrentPage = EPage::Main; BuildPage(); }
 void UTDGameUI::ShowHelp() { CurrentPage = EPage::Help; BuildPage(); }
 void UTDGameUI::ShowCommandMenu() { CurrentPage = EPage::Command; BuildPage(); }
 void UTDGameUI::ShowPauseMenu() { CurrentPage = EPage::Pause; BuildPage(); }
+void UTDGameUI::ShowAirstrikeTargetMenu() { CurrentPage = EPage::Airstrike; BuildPage(); }
 void UTDGameUI::ShowHUD() { CurrentPage = EPage::HUD; BuildPage(); RefreshDisplay(); }
 
 UTextBlock* UTDGameUI::AddLabel(UVerticalBox* List, const FString& Label, int32 FontSize, const FLinearColor& Color, bool bBold)
@@ -188,7 +189,9 @@ void UTDGameUI::BuildPage()
 	PanelSlot->SetAnchors(FAnchors(0.5f, 0.5f));
 	PanelSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 	PanelSlot->SetPosition(FVector2D(0, 0));
-	PanelSlot->SetSize(FVector2D(CurrentPage == EPage::Command ? 680.0f : 520.0f, CurrentPage == EPage::Command ? 680.0f : 560.0f));
+	const bool bWidePanel = CurrentPage == EPage::Command;
+	const bool bAirstrikePanel = CurrentPage == EPage::Airstrike;
+	PanelSlot->SetSize(FVector2D(bWidePanel ? 680.0f : 560.0f, bWidePanel ? 680.0f : (bAirstrikePanel ? 430.0f : 560.0f)));
 	Panel->SetPadding(FMargin(24.0f));
 	UVerticalBox* Content = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass());
 	Panel->AddChild(Content);
@@ -210,7 +213,7 @@ void UTDGameUI::BuildPage()
 		AddLabel(Content, TEXT("THE MISSION"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("Survive five zombie waves. Defenses fire automatically. When the final wave falls, reach the helicopter beyond the city exit."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("COMMANDS"), 15, TDUIStyle::Cyan, true);
-		AddLabel(Content, TEXT("B opens the build and upgrade menu. Choose an action there, or use keys 1–7 for a quick action. Select Turret, then click a yellow arrow above a free rooftop pad. Right-click or press Esc to cancel; credits are spent only after placement."), 15, FLinearColor::White);
+		AddLabel(Content, TEXT("B opens the build and upgrade menu. Choose an action there, or use keys 1–7 for a quick action. Select Turret, then click a yellow arrow above a free rooftop pad. For an Eagle Airstrike, press 5 and choose West, East or South. The strike covers the full lane for 250 damage and costs 240 credits."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("CAMERA VIEWS"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("Use WASD or the arrow keys to fly along one of four straight camera lines. Every camera view points at the outpost. Press Space or Home to return above it before choosing a different road. The camera cannot stop between the five fixed views."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("Earn 10 credits for each zombie defeated. Spend credits between waves to prepare."), 14, TDUIStyle::Muted);
@@ -225,7 +228,7 @@ void UTDGameUI::BuildPage()
 		AddCommandButton(Content, 2, TEXT("GUARD BOT"), TEXT("90"), TEXT("Mobile support that attacks zombies around the outpost."));
 		AddCommandButton(Content, 3, TEXT("BARBED WIRE"), TEXT("35"), TEXT("Slows and damages zombies approaching the walls."));
 		AddCommandButton(Content, 4, TEXT("REPAIR OUTPOST"), TEXT("40"), TEXT("Restore up to 300 integrity."));
-		AddCommandButton(Content, 5, TEXT("EAGLE AIRSTRIKE"), TEXT("120"), TEXT("Strike a group near the cursor. Requires zombies in range."));
+		AddCommandButton(Content, 5, TEXT("EAGLE AIRSTRIKE"), TEXT("240"), TEXT("Choose one of the three zombie approaches. The strike hits the full lane."));
 		AddCommandButton(Content, 6, TEXT("UPGRADE TURRET"), TEXT("50+"), TEXT("Improve the nearest turret. Each level costs more."));
 		AddCommandButton(Content, 7, TEXT("REINFORCE WALLS"), TEXT("80"), TEXT("Reduce damage to the outpost. Up to three upgrades."));
 		UButton* Close = AddButton(Content, TEXT("CLOSE  /  RESUME"), TDUIStyle::Cyan);
@@ -246,6 +249,19 @@ void UTDGameUI::BuildPage()
 		if (Main) Main->OnClicked.AddDynamic(this, &UTDGameUI::MainMenuClicked);
 		UButton* Exit = AddButton(Content, TEXT("EXIT GAME"), FLinearColor(0.72f, 0.30f, 0.25f, 1));
 		if (Exit) Exit->OnClicked.AddDynamic(this, &UTDGameUI::ExitClicked);
+	}
+	else if (CurrentPage == EPage::Airstrike)
+	{
+		AddLabel(Content, TEXT("EAGLE AIRSTRIKE  /  240 CREDITS"), 24, TDUIStyle::Yellow, true);
+		AddLabel(Content, TEXT("Choose one zombie approach. The strike covers the full lane and deals 250 damage to every zombie there."), 14, TDUIStyle::Muted);
+		UButton* West = AddButton(Content, TEXT("1   WEST APPROACH"), TDUIStyle::Cyan);
+		if (West) West->OnClicked.AddDynamic(this, &UTDGameUI::AirstrikeWestClicked);
+		UButton* East = AddButton(Content, TEXT("2   EAST APPROACH"), TDUIStyle::Cyan);
+		if (East) East->OnClicked.AddDynamic(this, &UTDGameUI::AirstrikeEastClicked);
+		UButton* South = AddButton(Content, TEXT("3   SOUTH APPROACH"), TDUIStyle::Cyan);
+		if (South) South->OnClicked.AddDynamic(this, &UTDGameUI::AirstrikeSouthClicked);
+		UButton* Cancel = AddButton(Content, TEXT("CANCEL  /  ESC"), TDUIStyle::Yellow);
+		if (Cancel) Cancel->OnClicked.AddDynamic(this, &UTDGameUI::AirstrikeCancelClicked);
 	}
 }
 
@@ -330,3 +346,7 @@ void UTDGameUI::Action4Clicked() { DoAction(4); }
 void UTDGameUI::Action5Clicked() { DoAction(5); }
 void UTDGameUI::Action6Clicked() { DoAction(6); }
 void UTDGameUI::Action7Clicked() { DoAction(7); }
+void UTDGameUI::AirstrikeWestClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->ConfirmAirstrikeTarget(0); }
+void UTDGameUI::AirstrikeEastClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->ConfirmAirstrikeTarget(1); }
+void UTDGameUI::AirstrikeSouthClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->ConfirmAirstrikeTarget(2); }
+void UTDGameUI::AirstrikeCancelClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->CancelAirstrikeTarget(); }

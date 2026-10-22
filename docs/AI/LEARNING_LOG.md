@@ -29,3 +29,4 @@ Add a short entry only when an iteration produces a specific, repeatable lesson 
 - Require camera travel to return to the outpost center before changing road spokes; otherwise stop selection permits a diagonal shortcut across the map.
 - For fixed tower pads, show world-space markers for every available slot, select the pad by clicking near its projected marker, and deduct currency only after the placement succeeds.
 - Projected pixel coordinates must be divided by Unreal's viewport DPI scale before positioning UMG arrows; limit visible arrows to positions inside the player viewport.
+- For lane-wide abilities, tag each spawned enemy with its source lane and resolve the ability against that lane tag; this gives full-lane coverage without a fragile distance radius. Keep target selection as a paused, explicit three-choice UI and charge currency only after confirming a valid lane with targets.

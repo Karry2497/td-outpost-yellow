@@ -72,7 +72,8 @@ public:
 	bool UpgradeNearestTower(const FVector& Location);
 	bool RepairOutpost();
 	bool UpgradeOutpostWalls();
-	bool CallAirstrike(const FVector& Center);
+	bool CanAffordAirstrike() const { return Credits >= 240; }
+	bool CallAirstrike(uint8 LaneIndex);
 	bool RefillPlayerAmmo(APawn* PlayerPawn);
 	void CompleteExtraction();
 	void ShowDefenseStatus(const FString& Message, const FColor& Color = FColor::White);

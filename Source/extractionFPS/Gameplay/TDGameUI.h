@@ -20,11 +20,12 @@ public:
 	void ShowHelp();
 	void ShowCommandMenu();
 	void ShowPauseMenu();
+	void ShowAirstrikeTargetMenu();
 	void ShowHUD();
 	void RefreshDisplay();
 
 private:
-	enum class EPage : uint8 { Main, Help, Command, Pause, HUD };
+	enum class EPage : uint8 { Main, Help, Command, Pause, Airstrike, HUD };
 	EPage CurrentPage = EPage::Main;
 	UPROPERTY()
 	TObjectPtr<UCanvasPanel> RootCanvas;
@@ -59,5 +60,9 @@ private:
 	UFUNCTION() void Action5Clicked();
 	UFUNCTION() void Action6Clicked();
 	UFUNCTION() void Action7Clicked();
+	UFUNCTION() void AirstrikeWestClicked();
+	UFUNCTION() void AirstrikeEastClicked();
+	UFUNCTION() void AirstrikeSouthClicked();
+	UFUNCTION() void AirstrikeCancelClicked();
 	void DoAction(uint8 Number);
 };

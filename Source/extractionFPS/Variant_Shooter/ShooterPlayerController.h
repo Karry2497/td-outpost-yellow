@@ -111,6 +111,9 @@ protected:
 	void DefenseHotkey5();
 	void DefenseHotkey6();
 	void DefenseHotkey7();
+	void AirstrikeLane1();
+	void AirstrikeLane2();
+	void AirstrikeLane3();
 	void CameraNorth();
 	void CameraSouth();
 	void CameraWest();
@@ -121,6 +124,7 @@ protected:
 	FTransform GetCameraStopTransform(uint8 StopIndex) const;
 	void TurretPlacementClick();
 	void TurretPlacementCancelClick();
+	void BeginAirstrikeTargetSelection();
 
 public:
 	AShooterPlayerController();
@@ -136,6 +140,8 @@ public:
 	void CloseOverlayAndResume();
 	void RestartLevel();
 	void UpdateTDHUD();
+	void ConfirmAirstrikeTarget(uint8 LaneIndex);
+	void CancelAirstrikeTarget();
 
 	/** Assigns a team ID to this player */
 	void SetTeam(uint8 Team);
@@ -149,6 +155,7 @@ private:
 	uint8 CurrentCameraStop = 0;
 	bool bCameraTransitioning = false;
 	bool bTurretPlacementPending = false;
+	bool bAirstrikeTargetPending = false;
 	float CameraTransitionElapsed = 0.0f;
 	float CameraTransitionDuration = 0.85f;
 	FTransform CameraTransitionStart;
@@ -156,5 +163,6 @@ private:
 
 public:
 	bool IsTurretPlacementPending() const { return bTurretPlacementPending; }
+	bool IsAirstrikeTargetPending() const { return bAirstrikeTargetPending; }
 	void GetTurretPlacementScreenPositions(TArray<FVector2D>& OutPositions) const;
 };
