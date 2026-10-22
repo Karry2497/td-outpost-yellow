@@ -24,3 +24,4 @@ Add a short entry only when an iteration produces a specific, repeatable lesson 
 - For a pawn-free Unreal tower-defense camera, disable `bAutoManageActiveCameraTarget` before unpossessing the starter pawn; otherwise the controller can replace the explicit camera target during play and leave the viewport black.
 - In a locked overhead tower-defense view, spend detail on readable silhouettes and color breaks for units, plus graphic features on roof surfaces; facade-only decoration disappears when the camera is high.
 - Compose prototype defenses from a dark structural base, a bright upgrade/accent layer, and distinct weapon or utility shapes so turret, bot, and wire remain recognizable at gameplay scale.
+- For fixed tower-defense camera stops, use the level's world axes and lane centers to define destinations, animate the camera actor between full transforms, and ignore new stop input until arrival; show the current stop and controls in the HUD.

@@ -10,6 +10,7 @@ class UInputMappingContext;
 class AShooterCharacter;
 class UShooterBulletCounterUI;
 class UTDGameUI;
+class ACameraActor;
 
 /**
  *  Simple PlayerController for a first person shooter game
@@ -22,6 +23,7 @@ class EXTRACTIONFPS_API AShooterPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 protected:
+	virtual void Tick(float DeltaSeconds) override;
 
 	/** Input mapping contexts for this player */
 	UPROPERTY(EditAnywhere, Category="Input|Input Mappings")
@@ -104,8 +106,19 @@ protected:
 	void DefenseHotkey5();
 	void DefenseHotkey6();
 	void DefenseHotkey7();
+	void CameraNorth();
+	void CameraSouth();
+	void CameraWest();
+	void CameraEast();
+	void CameraOutpost();
+	void MoveToCameraStop(uint8 StopIndex);
+	void UpdateCameraStopLabel();
+	FTransform GetCameraStopTransform(uint8 StopIndex) const;
 
 public:
+	AShooterPlayerController();
+	FString GetCameraStopName() const;
+	uint8 GetCameraStopIndex() const { return CurrentCameraStop; }
 	void StartDefense();
 	void ExecuteDefenseAction(uint8 Hotkey);
 	void ToggleCommandMenu();
@@ -119,4 +132,14 @@ public:
 
 	/** Assigns a team ID to this player */
 	void SetTeam(uint8 Team);
+
+private:
+	UPROPERTY()
+	TObjectPtr<ACameraActor> DefenseCamera;
+	uint8 CurrentCameraStop = 0;
+	bool bCameraTransitioning = false;
+	float CameraTransitionElapsed = 0.0f;
+	float CameraTransitionDuration = 0.85f;
+	FTransform CameraTransitionStart;
+	FTransform CameraTransitionTarget;
 };

@@ -8,6 +8,7 @@
 #include "Camera/CameraActor.h"
 #include "Camera/CameraComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 #include "GameFramework/PlayerStart.h"
 #include "ShooterCharacter.h"
 #include "ShooterBulletCounterUI.h"
@@ -18,6 +19,29 @@
 #include "Engine/World.h"
 #include "Gameplay/TDGameUI.h"
 #include "Kismet/KismetSystemLibrary.h"
+
+AShooterPlayerController::AShooterPlayerController()
+{
+	PrimaryActorTick.bCanEverTick = true;
+}
+
+void AShooterPlayerController::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (!bCameraTransitioning || !IsValid(DefenseCamera)) return;
+
+	CameraTransitionElapsed += DeltaSeconds;
+	const float LinearAlpha = FMath::Clamp(CameraTransitionElapsed / CameraTransitionDuration, 0.0f, 1.0f);
+	const float Alpha = FMath::InterpEaseInOut(0.0f, 1.0f, LinearAlpha, 2.0f);
+	const FVector Location = FMath::Lerp(CameraTransitionStart.GetLocation(), CameraTransitionTarget.GetLocation(), Alpha);
+	const FQuat Rotation = FQuat::Slerp(CameraTransitionStart.GetRotation(), CameraTransitionTarget.GetRotation(), Alpha);
+	DefenseCamera->SetActorLocationAndRotation(Location, Rotation, false, nullptr, ETeleportType::TeleportPhysics);
+	if (LinearAlpha >= 1.0f)
+	{
+		bCameraTransitioning = false;
+		DefenseCamera->SetActorTransform(CameraTransitionTarget);
+	}
+}
 
 void AShooterPlayerController::BeginPlay()
 {
@@ -42,12 +66,13 @@ void AShooterPlayerController::BeginPlay()
 
 		FActorSpawnParameters CameraSpawnParams;
 		CameraSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		if (ACameraActor* DefenseCamera = GetWorld()->SpawnActor<ACameraActor>(
-			ACameraActor::StaticClass(), FVector(0.0f, 6200.0f, 4500.0f), FRotator(-35.0f, -90.0f, 0.0f), CameraSpawnParams))
+		DefenseCamera = GetWorld()->SpawnActor<ACameraActor>(
+			ACameraActor::StaticClass(), GetCameraStopTransform(0), CameraSpawnParams);
+		if (IsValid(DefenseCamera))
 		{
 			UCameraComponent* CameraComponent = DefenseCamera->GetCameraComponent();
 			CameraComponent->SetProjectionMode(ECameraProjectionMode::Perspective);
-			CameraComponent->FieldOfView = 80.0f;
+			CameraComponent->FieldOfView = 70.0f;
 			SetViewTarget(DefenseCamera);
 		}
 	}
@@ -85,6 +110,16 @@ void AShooterPlayerController::SetupInputComponent()
 		InputComponent->BindKey(EKeys::Five, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey5);
 		InputComponent->BindKey(EKeys::Six, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey6);
 		InputComponent->BindKey(EKeys::Seven, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey7);
+		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &AShooterPlayerController::CameraNorth);
+		InputComponent->BindKey(EKeys::W, IE_Pressed, this, &AShooterPlayerController::CameraNorth);
+		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &AShooterPlayerController::CameraSouth);
+		InputComponent->BindKey(EKeys::S, IE_Pressed, this, &AShooterPlayerController::CameraSouth);
+		InputComponent->BindKey(EKeys::Left, IE_Pressed, this, &AShooterPlayerController::CameraWest);
+		InputComponent->BindKey(EKeys::A, IE_Pressed, this, &AShooterPlayerController::CameraWest);
+		InputComponent->BindKey(EKeys::Right, IE_Pressed, this, &AShooterPlayerController::CameraEast);
+		InputComponent->BindKey(EKeys::D, IE_Pressed, this, &AShooterPlayerController::CameraEast);
+		InputComponent->BindKey(EKeys::SpaceBar, IE_Pressed, this, &AShooterPlayerController::CameraOutpost);
+		InputComponent->BindKey(EKeys::Home, IE_Pressed, this, &AShooterPlayerController::CameraOutpost);
 		InputComponent->BindKey(EKeys::B, IE_Pressed, this, &AShooterPlayerController::ToggleCommandMenu).bExecuteWhenPaused = true;
 		InputComponent->BindKey(EKeys::Escape, IE_Pressed, this, &AShooterPlayerController::TogglePauseMenu).bExecuteWhenPaused = true;
 		// add the input mapping contexts
@@ -124,6 +159,65 @@ void AShooterPlayerController::SetupInputComponent()
 
 	}
 }
+
+FTransform AShooterPlayerController::GetCameraStopTransform(uint8 StopIndex) const
+{
+	// All stops look down across the same compact play space. Each lane view is
+	// centered over its road, so there is no free-flying camera position.
+	static const FVector FocusPoints[] = {
+		FVector(0.0f, 0.0f, 150.0f),
+		FVector(0.0f, 3900.0f, 0.0f),
+		FVector(-4300.0f, 0.0f, 0.0f),
+		FVector(4300.0f, 0.0f, 0.0f),
+		FVector(0.0f, -4300.0f, 0.0f)
+	};
+	static const FVector CameraOffsets[] = {
+		FVector(0.0f, 3900.0f, 4400.0f),
+		FVector(0.0f, 1700.0f, 3900.0f),
+		FVector(1500.0f, 0.0f, 3900.0f),
+		FVector(-1500.0f, 0.0f, 3900.0f),
+		FVector(0.0f, 1500.0f, 3900.0f)
+	};
+	const uint8 SafeIndex = FMath::Min<uint8>(StopIndex, UE_ARRAY_COUNT(FocusPoints) - 1);
+	const FVector Focus = FocusPoints[SafeIndex];
+	const FVector Location = Focus + CameraOffsets[SafeIndex];
+	return FTransform(UKismetMathLibrary::FindLookAtRotation(Location, Focus), Location, FVector::OneVector);
+}
+
+FString AShooterPlayerController::GetCameraStopName() const
+{
+	static const TCHAR* Names[] = { TEXT("OUTPOST"), TEXT("NORTH ROAD"), TEXT("WEST ROAD"), TEXT("EAST ROAD"), TEXT("SOUTH ROAD") };
+	return Names[FMath::Min<uint8>(CurrentCameraStop, UE_ARRAY_COUNT(Names) - 1)];
+}
+
+void AShooterPlayerController::MoveToCameraStop(uint8 StopIndex)
+{
+	AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
+	if (!GameMode || !GameMode->HasGameStarted() || IsPaused() || !IsValid(DefenseCamera) || bCameraTransitioning)
+	{
+		return;
+	}
+	StopIndex = FMath::Min<uint8>(StopIndex, 4);
+	if (StopIndex == CurrentCameraStop) return;
+
+	CurrentCameraStop = StopIndex;
+	CameraTransitionStart = DefenseCamera->GetActorTransform();
+	CameraTransitionTarget = GetCameraStopTransform(CurrentCameraStop);
+	CameraTransitionElapsed = 0.0f;
+	bCameraTransitioning = true;
+	UpdateCameraStopLabel();
+}
+
+void AShooterPlayerController::UpdateCameraStopLabel()
+{
+	if (TDGameUI) TDGameUI->RefreshDisplay();
+}
+
+void AShooterPlayerController::CameraNorth() { MoveToCameraStop(1); }
+void AShooterPlayerController::CameraWest() { MoveToCameraStop(2); }
+void AShooterPlayerController::CameraEast() { MoveToCameraStop(3); }
+void AShooterPlayerController::CameraSouth() { MoveToCameraStop(4); }
+void AShooterPlayerController::CameraOutpost() { MoveToCameraStop(0); }
 
 void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 {

@@ -99,7 +99,7 @@ void UTDGameUI::AddCommandButton(UVerticalBox* List, int32 Number, const FString
 void UTDGameUI::BuildPage()
 {
 	if (!WidgetTree) return;
-	WaveText = nullptr; CreditsText = nullptr; ZombieText = nullptr; HealthText = nullptr; StatusText = nullptr; HealthBar = nullptr;
+	WaveText = nullptr; CreditsText = nullptr; ZombieText = nullptr; HealthText = nullptr; CameraText = nullptr; StatusText = nullptr; HealthBar = nullptr;
 	UCanvasPanel* Root = RootCanvas;
 	if (!Root)
 	{
@@ -139,6 +139,7 @@ void UTDGameUI::BuildPage()
 		AddStat(TEXT("CREDITS 200"), CreditsText);
 		AddStat(TEXT("ZOMBIES 0"), ZombieText);
 		AddStat(TEXT("OUTPOST 100%"), HealthText);
+		AddStat(TEXT("CAM: OUTPOST"), CameraText);
 		HealthBar = WidgetTree->ConstructWidget<UProgressBar>(UProgressBar::StaticClass());
 		HealthBar->SetFillColorAndOpacity(TDUIStyle::Cyan);
 		HealthBar->SetPercent(1.0f);
@@ -155,7 +156,7 @@ void UTDGameUI::BuildPage()
 		StatusText->SetColorAndOpacity(FSlateColor(TDUIStyle::Cyan));
 		StatusText->SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 14));
 		BottomContent->AddChildToVerticalBox(StatusText);
-		AddLabel(BottomContent, TEXT("B  COMMAND MENU     •     1–7  QUICK ACTIONS     •     ESC  PAUSE"), 12, TDUIStyle::Muted);
+		AddLabel(BottomContent, TEXT("WASD / ARROWS  CAMERA STOPS     •     SPACE / HOME  OUTPOST     •     B  COMMANDS     •     ESC  PAUSE"), 12, TDUIStyle::Muted);
 		return;
 	}
 
@@ -192,6 +193,8 @@ void UTDGameUI::BuildPage()
 		AddLabel(Content, TEXT("Survive five zombie waves. Defenses fire automatically. When the final wave falls, reach the helicopter beyond the city exit."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("COMMANDS"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("B opens the build and upgrade menu. Choose an action there, or use keys 1–7 for a quick action. Turrets use rooftop pads. Mouse position selects the target for airstrikes and upgrades."), 15, FLinearColor::White);
+		AddLabel(Content, TEXT("CAMERA VIEWS"), 15, TDUIStyle::Cyan, true);
+		AddLabel(Content, TEXT("Use WASD or the arrow keys to fly to one of four fixed road views. Press Space or Home to return to the outpost view. The camera cannot stop between views."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("Earn 10 credits for each zombie defeated. Spend credits between waves to prepare."), 14, TDUIStyle::Muted);
 		UButton* Back = AddButton(Content, TEXT("BACK"), TDUIStyle::Yellow);
 		if (Back) Back->OnClicked.AddDynamic(this, &UTDGameUI::BackClicked);
@@ -236,6 +239,11 @@ void UTDGameUI::RefreshDisplay()
 	if (CreditsText) CreditsText->SetText(FText::FromString(FString::Printf(TEXT("CREDITS %d"), GM->GetCredits())));
 	if (ZombieText) ZombieText->SetText(FText::FromString(FString::Printf(TEXT("ZOMBIES %d"), GM->GetZombieCount())));
 	if (HealthText) HealthText->SetText(FText::FromString(FString::Printf(TEXT("OUTPOST %d%%"), FMath::RoundToInt(GM->GetOutpostHealth() / 10.0f))));
+	if (CameraText)
+	{
+		const AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer());
+		CameraText->SetText(FText::FromString(FString::Printf(TEXT("CAM: %s"), PC ? *PC->GetCameraStopName() : TEXT("OUTPOST"))));
+	}
 	if (HealthBar) HealthBar->SetPercent(FMath::Clamp(GM->GetOutpostHealth() / 1000.0f, 0.0f, 1.0f));
 	if (StatusText) StatusText->SetText(FText::FromString(GM->GetLastDefenseStatus()));
 }

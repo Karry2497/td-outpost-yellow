@@ -32,6 +32,7 @@ private:
 	TObjectPtr<UTextBlock> CreditsText;
 	TObjectPtr<UTextBlock> ZombieText;
 	TObjectPtr<UTextBlock> HealthText;
+	TObjectPtr<UTextBlock> CameraText;
 	TObjectPtr<UTextBlock> StatusText;
 	TObjectPtr<UProgressBar> HealthBar;
 
