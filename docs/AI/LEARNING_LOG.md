@@ -25,3 +25,5 @@ Add a short entry only when an iteration produces a specific, repeatable lesson 
 - In a locked overhead tower-defense view, spend detail on readable silhouettes and color breaks for units, plus graphic features on roof surfaces; facade-only decoration disappears when the camera is high.
 - Compose prototype defenses from a dark structural base, a bright upgrade/accent layer, and distinct weapon or utility shapes so turret, bot, and wire remain recognizable at gameplay scale.
 - For fixed tower-defense camera stops, use the level's world axes and lane centers to define destinations, animate the camera actor between full transforms, and ignore new stop input until arrival; show the current stop and controls in the HUD.
+- When camera stops are connected by drawn radial rails, keep the camera's XY path on each rail and recalculate its rotation toward the outpost throughout the flight.
+- Require camera travel to return to the outpost center before changing road spokes; otherwise stop selection permits a diagonal shortcut across the map.

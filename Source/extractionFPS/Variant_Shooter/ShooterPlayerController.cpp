@@ -34,7 +34,7 @@ void AShooterPlayerController::Tick(float DeltaSeconds)
 	const float LinearAlpha = FMath::Clamp(CameraTransitionElapsed / CameraTransitionDuration, 0.0f, 1.0f);
 	const float Alpha = FMath::InterpEaseInOut(0.0f, 1.0f, LinearAlpha, 2.0f);
 	const FVector Location = FMath::Lerp(CameraTransitionStart.GetLocation(), CameraTransitionTarget.GetLocation(), Alpha);
-	const FQuat Rotation = FQuat::Slerp(CameraTransitionStart.GetRotation(), CameraTransitionTarget.GetRotation(), Alpha);
+	const FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(Location, FVector(0.0f, 0.0f, 500.0f));
 	DefenseCamera->SetActorLocationAndRotation(Location, Rotation, false, nullptr, ETeleportType::TeleportPhysics);
 	if (LinearAlpha >= 1.0f)
 	{
@@ -162,26 +162,20 @@ void AShooterPlayerController::SetupInputComponent()
 
 FTransform AShooterPlayerController::GetCameraStopTransform(uint8 StopIndex) const
 {
-	// All stops look down across the same compact play space. Each lane view is
-	// centered over its road, so there is no free-flying camera position.
-	static const FVector FocusPoints[] = {
-		FVector(0.0f, 0.0f, 150.0f),
-		FVector(0.0f, 3900.0f, 0.0f),
-		FVector(-4300.0f, 0.0f, 0.0f),
-		FVector(4300.0f, 0.0f, 0.0f),
-		FVector(0.0f, -4300.0f, 0.0f)
+	// The center stop sits above the outpost. The four road stops sit on the
+	// straight cardinal camera rails drawn in the level sketch; every stop looks
+	// back at the outpost rather than turning toward the road.
+	static const FVector CameraLocations[] = {
+		FVector(0.0f, 0.0f, 4800.0f),
+		FVector(0.0f, 5000.0f, 4800.0f),
+		FVector(-5000.0f, 0.0f, 4800.0f),
+		FVector(5000.0f, 0.0f, 4800.0f),
+		FVector(0.0f, -5000.0f, 4800.0f)
 	};
-	static const FVector CameraOffsets[] = {
-		FVector(0.0f, 3900.0f, 4400.0f),
-		FVector(0.0f, 1700.0f, 3900.0f),
-		FVector(1500.0f, 0.0f, 3900.0f),
-		FVector(-1500.0f, 0.0f, 3900.0f),
-		FVector(0.0f, 1500.0f, 3900.0f)
-	};
-	const uint8 SafeIndex = FMath::Min<uint8>(StopIndex, UE_ARRAY_COUNT(FocusPoints) - 1);
-	const FVector Focus = FocusPoints[SafeIndex];
-	const FVector Location = Focus + CameraOffsets[SafeIndex];
-	return FTransform(UKismetMathLibrary::FindLookAtRotation(Location, Focus), Location, FVector::OneVector);
+	const uint8 SafeIndex = FMath::Min<uint8>(StopIndex, UE_ARRAY_COUNT(CameraLocations) - 1);
+	const FVector Location = CameraLocations[SafeIndex];
+	const FRotator Rotation = UKismetMathLibrary::FindLookAtRotation(Location, FVector(0.0f, 0.0f, 500.0f));
+	return FTransform(Rotation, Location, FVector::OneVector);
 }
 
 FString AShooterPlayerController::GetCameraStopName() const
@@ -198,6 +192,12 @@ void AShooterPlayerController::MoveToCameraStop(uint8 StopIndex)
 		return;
 	}
 	StopIndex = FMath::Min<uint8>(StopIndex, 4);
+	// The four road routes meet only at the outpost. Require a return to the
+	// center before switching spokes so the camera never cuts diagonally.
+	if (CurrentCameraStop != 0 && StopIndex != 0)
+	{
+		return;
+	}
 	if (StopIndex == CurrentCameraStop) return;
 
 	CurrentCameraStop = StopIndex;

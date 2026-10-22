@@ -156,7 +156,7 @@ void UTDGameUI::BuildPage()
 		StatusText->SetColorAndOpacity(FSlateColor(TDUIStyle::Cyan));
 		StatusText->SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 14));
 		BottomContent->AddChildToVerticalBox(StatusText);
-		AddLabel(BottomContent, TEXT("WASD / ARROWS  CAMERA STOPS     •     SPACE / HOME  OUTPOST     •     B  COMMANDS     •     ESC  PAUSE"), 12, TDUIStyle::Muted);
+		AddLabel(BottomContent, TEXT("WASD / ARROWS  CHOOSE ROAD FROM OUTPOST     •     SPACE / HOME  RETURN TO OUTPOST     •     B  COMMANDS     •     ESC  PAUSE"), 12, TDUIStyle::Muted);
 		return;
 	}
 
@@ -194,7 +194,7 @@ void UTDGameUI::BuildPage()
 		AddLabel(Content, TEXT("COMMANDS"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("B opens the build and upgrade menu. Choose an action there, or use keys 1–7 for a quick action. Turrets use rooftop pads. Mouse position selects the target for airstrikes and upgrades."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("CAMERA VIEWS"), 15, TDUIStyle::Cyan, true);
-		AddLabel(Content, TEXT("Use WASD or the arrow keys to fly to one of four fixed road views. Press Space or Home to return to the outpost view. The camera cannot stop between views."), 15, FLinearColor::White);
+		AddLabel(Content, TEXT("Use WASD or the arrow keys to fly along one of four straight camera lines. Every camera view points at the outpost. Press Space or Home to return above it before choosing a different road. The camera cannot stop between the five fixed views."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("Earn 10 credits for each zombie defeated. Spend credits between waves to prepare."), 14, TDUIStyle::Muted);
 		UButton* Back = AddButton(Content, TEXT("BACK"), TDUIStyle::Yellow);
 		if (Back) Back->OnClicked.AddDynamic(this, &UTDGameUI::BackClicked);
