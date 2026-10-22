@@ -61,8 +61,12 @@ void AShooterPlayerController::BeginPlay()
 		TDGameUI = CreateWidget<UTDGameUI>(this, UTDGameUI::StaticClass());
 		if (TDGameUI)
 		{
-			TDGameUI->AddToViewport(10);
 			ShowMainMenu();
+			TDGameUI->AddToViewport(10);
+			bShowMouseCursor = true;
+			FInputModeUIOnly UIInputMode;
+			UIInputMode.SetWidgetToFocus(TDGameUI->TakeWidget());
+			SetInputMode(UIInputMode);
 		}
 	}
 }
