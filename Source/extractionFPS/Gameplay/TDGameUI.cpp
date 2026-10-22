@@ -161,11 +161,9 @@ void UTDGameUI::BuildPage()
 	PanelSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 	PanelSlot->SetPosition(FVector2D(0, 0));
 	PanelSlot->SetSize(FVector2D(CurrentPage == EPage::Command ? 680.0f : 520.0f, CurrentPage == EPage::Command ? 680.0f : 560.0f));
-	UBorder* InnerPadding = WidgetTree->ConstructWidget<UBorder>(UBorder::StaticClass());
-	InnerPadding->SetPadding(FMargin(24.0f));
-	Panel->AddChild(InnerPadding);
+	Panel->SetPadding(FMargin(24.0f));
 	UVerticalBox* Content = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass());
-	InnerPadding->AddChild(Content);
+	Panel->AddChild(Content);
 
 	if (CurrentPage == EPage::Main)
 	{
