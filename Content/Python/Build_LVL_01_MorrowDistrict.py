@@ -274,12 +274,12 @@ def main():
     # Six turret pads sit on building rooftops, clear of zombie lanes and
     # rooftop equipment. Their world coordinates are mirrored by GameMode.
     tower_pad_locations = (
-        ("northwest rooftop A", -9000.0, 8000.0, 1120.0),
-        ("northwest rooftop B", -5000.0, 8000.0, 1120.0),
-        ("northeast rooftop A", 5000.0, 8000.0, 1120.0),
-        ("northeast rooftop B", 9000.0, 8000.0, 1120.0),
-        ("southwest rooftop", -9000.0, -8000.0, 1120.0),
-        ("southeast rooftop", 9000.0, -8000.0, 1120.0),
+        ("northwest / west lane", -2250.0, 1750.0, 1120.0),
+        ("southwest / west lane", -2250.0, -1750.0, 1120.0),
+        ("northeast / east lane", 2250.0, 1750.0, 1120.0),
+        ("southeast / east lane", 2250.0, -1750.0, 1120.0),
+        ("southwest / south lane", -2187.5, -2000.0, 1120.0),
+        ("southeast / south lane", 2187.5, -2000.0, 1120.0),
     )
     for label, pad_x, pad_y, roof_z in tower_pad_locations:
         build_pad(cube, "Defense build pad / " + label, pad_x, pad_y, roof_z, build_pad_mat, build_pad_mark)
@@ -437,13 +437,6 @@ def main():
         unreal.PlayerStart, unreal.Vector(0.0, -600.0 * LEVEL_SCALE, 120.0 * LEVEL_SCALE), unreal.Rotator(0.0, -90.0, 0.0)
     )
     start.set_actor_label("Insertion / PlayerStart")
-
-    # Keep a single navigation volume over the street and reachable interiors.
-    nav = unreal.EditorLevelLibrary.spawn_actor_from_class(
-        unreal.NavMeshBoundsVolume, unreal.Vector(0.0, 0.0, 1000.0), unreal.Rotator(0.0, 0.0, 0.0)
-    )
-    nav.set_actor_label("Navigation / district bounds")
-    nav.set_actor_scale3d(unreal.Vector(120.0 * LEVEL_SCALE, 100.0 * LEVEL_SCALE, 20.0 * LEVEL_SCALE))
 
     level_editor.save_current_level()
     unreal.EditorAssetLibrary.save_directory("/Game/Maps", only_if_is_dirty=True, recursive=True)

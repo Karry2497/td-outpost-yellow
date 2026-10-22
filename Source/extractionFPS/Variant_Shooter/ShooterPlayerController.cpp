@@ -41,11 +41,11 @@ void AShooterPlayerController::BeginPlay()
 		FActorSpawnParameters CameraSpawnParams;
 		CameraSpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 		if (ACameraActor* DefenseCamera = GetWorld()->SpawnActor<ACameraActor>(
-			ACameraActor::StaticClass(), FVector(0.0f, 8400.0f, 6080.0f), FRotator(-36.0f, -90.0f, 0.0f), CameraSpawnParams))
+			ACameraActor::StaticClass(), FVector(0.0f, 6200.0f, 4500.0f), FRotator(-35.0f, -90.0f, 0.0f), CameraSpawnParams))
 		{
 			UCameraComponent* CameraComponent = DefenseCamera->GetCameraComponent();
 			CameraComponent->SetProjectionMode(ECameraProjectionMode::Perspective);
-			CameraComponent->FieldOfView = 94.0f;
+			CameraComponent->FieldOfView = 80.0f;
 			SetViewTarget(DefenseCamera);
 		}
 	}

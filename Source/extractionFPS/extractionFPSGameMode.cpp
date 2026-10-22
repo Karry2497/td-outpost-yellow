@@ -176,24 +176,44 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 	FVector DeploymentLocation = Location;
 	if (Type == ETDDefenseType::Turret)
 	{
-		// Turrets are built only on the six marked rooftops, never on zombie lanes.
+		// Turrets are built only on marked rooftop edges near all three zombie lanes.
 		static const FVector RooftopSlots[] = {
-			FVector(-7200.0f, 6400.0f, 904.0f),
-			FVector(-4000.0f, 6400.0f, 904.0f),
-			FVector(4000.0f, 6400.0f, 904.0f),
-			FVector(7200.0f, 6400.0f, 904.0f),
-			FVector(-7200.0f, -6400.0f, 904.0f),
-			FVector(7200.0f, -6400.0f, 904.0f)
+			FVector(-1800.0f, 1400.0f, 904.0f),
+			FVector(-1800.0f, -1400.0f, 904.0f),
+			FVector(1800.0f, 1400.0f, 904.0f),
+			FVector(1800.0f, -1400.0f, 904.0f),
+			FVector(-1750.0f, -1600.0f, 904.0f),
+			FVector(1750.0f, -1600.0f, 904.0f)
 		};
+		TArray<AActor*> ExistingDefenses;
+		UGameplayStatics::GetAllActorsOfClass(this, ATDDefenseDeployable::StaticClass(), ExistingDefenses);
 		float NearestDistanceSquared = TNumericLimits<float>::Max();
 		for (const FVector& Slot : RooftopSlots)
 		{
+			bool bOccupied = false;
+			for (const AActor* ExistingDefense : ExistingDefenses)
+			{
+				if (FVector::DistSquared2D(ExistingDefense->GetActorLocation(), Slot) < FMath::Square(300.0f))
+				{
+					bOccupied = true;
+					break;
+				}
+			}
+			if (bOccupied)
+			{
+				continue;
+			}
 			const float DistanceSquared = FVector::DistSquared2D(Location, Slot);
 			if (DistanceSquared < NearestDistanceSquared)
 			{
 				NearestDistanceSquared = DistanceSquared;
 				DeploymentLocation = Slot;
 			}
+		}
+		if (NearestDistanceSquared == TNumericLimits<float>::Max())
+		{
+			ShowDefenseStatus(TEXT("All rooftop turret pads are occupied"), FColor::Red);
+			return false;
 		}
 	}
 	FActorSpawnParameters SpawnParams;
@@ -218,7 +238,10 @@ bool AextractionFPSGameMode::UpgradeNearestTower(const FVector& Location)
 	TArray<AActor*> Defenses;
 	UGameplayStatics::GetAllActorsOfClass(this, ATDDefenseDeployable::StaticClass(), Defenses);
 	ATDDefenseDeployable* NearestTower = nullptr;
-	float NearestDistanceSquared = FMath::Square(1400.0f);
+	// Prefer the turret nearest the cursor, but allow the command to work even
+	// when the mouse is outside the turret's interaction radius. This is a
+	// keyboard-first TD control, so the player should not need pixel-perfect aim.
+	float NearestDistanceSquared = TNumericLimits<float>::Max();
 	for (AActor* Actor : Defenses)
 	{
 		ATDDefenseDeployable* Defense = Cast<ATDDefenseDeployable>(Actor);
@@ -236,7 +259,7 @@ bool AextractionFPSGameMode::UpgradeNearestTower(const FVector& Location)
 
 	if (!NearestTower)
 	{
-		ShowDefenseStatus(TEXT("Select a turret within range to upgrade"), FColor::Red);
+		ShowDefenseStatus(TEXT("Build a turret before upgrading"), FColor::Red);
 		return false;
 	}
 	const int32 Cost = 50 * (NearestTower->GetUpgradeLevel() + 1);
