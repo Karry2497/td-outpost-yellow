@@ -67,6 +67,8 @@ public:
 	void NotifyZombieKilled(ATDZombieCharacter* Zombie);
 	void DamageOutpost(float Damage);
 	bool PurchaseDefense(ETDDefenseType Type, const FVector& Location, const FRotator& Rotation);
+	TArray<FVector> GetAvailableTurretSlots() const;
+	bool CanAffordTurret() const { return Credits >= 60; }
 	bool UpgradeNearestTower(const FVector& Location);
 	bool RepairOutpost();
 	bool UpgradeOutpostWalls();

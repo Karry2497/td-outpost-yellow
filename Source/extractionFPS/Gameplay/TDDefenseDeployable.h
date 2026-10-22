@@ -21,6 +21,7 @@ public:
 	ATDDefenseDeployable();
 	void Configure(ETDDefenseType NewType);
 	bool Upgrade();
+	bool IsTurret() const { return DefenseType == ETDDefenseType::Turret; }
 	int32 GetUpgradeLevel() const { return UpgradeLevel; }
 	bool CanUpgrade() const { return DefenseType == ETDDefenseType::Turret && UpgradeLevel < 3; }
 

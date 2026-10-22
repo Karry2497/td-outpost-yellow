@@ -171,33 +171,10 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 	FVector DeploymentLocation = Location;
 	if (Type == ETDDefenseType::Turret)
 	{
-		// Turrets are built only on marked rooftop edges near all three zombie lanes.
-		static const FVector RooftopSlots[] = {
-			FVector(-1800.0f, 1400.0f, 904.0f),
-			FVector(-1800.0f, -1400.0f, 904.0f),
-			FVector(1800.0f, 1400.0f, 904.0f),
-			FVector(1800.0f, -1400.0f, 904.0f),
-			FVector(-1750.0f, -1600.0f, 904.0f),
-			FVector(1750.0f, -1600.0f, 904.0f)
-		};
-		TArray<AActor*> ExistingDefenses;
-		UGameplayStatics::GetAllActorsOfClass(this, ATDDefenseDeployable::StaticClass(), ExistingDefenses);
+		const TArray<FVector> AvailableSlots = GetAvailableTurretSlots();
 		float NearestDistanceSquared = TNumericLimits<float>::Max();
-		for (const FVector& Slot : RooftopSlots)
+		for (const FVector& Slot : AvailableSlots)
 		{
-			bool bOccupied = false;
-			for (const AActor* ExistingDefense : ExistingDefenses)
-			{
-				if (FVector::DistSquared2D(ExistingDefense->GetActorLocation(), Slot) < FMath::Square(300.0f))
-				{
-					bOccupied = true;
-					break;
-				}
-			}
-			if (bOccupied)
-			{
-				continue;
-			}
 			const float DistanceSquared = FVector::DistSquared2D(Location, Slot);
 			if (DistanceSquared < NearestDistanceSquared)
 			{
@@ -205,9 +182,9 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 				DeploymentLocation = Slot;
 			}
 		}
-		if (NearestDistanceSquared == TNumericLimits<float>::Max())
+		if (NearestDistanceSquared > FMath::Square(250.0f))
 		{
-			ShowDefenseStatus(TEXT("All rooftop turret pads are occupied"), FColor::Red);
+			ShowDefenseStatus(AvailableSlots.IsEmpty() ? TEXT("All rooftop turret pads are occupied") : TEXT("Click one of the marked rooftop pads"), FColor::Red);
 			return false;
 		}
 	}
@@ -226,6 +203,36 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 		: (Type == ETDDefenseType::GuardBot ? TEXT("GUARD BOT") : TEXT("BARBED WIRE"));
 	ShowDefenseStatus(FString::Printf(TEXT("%s deployed | -%d credits | %d left"), DefenseName, Cost, Credits), FColor(120, 255, 80));
 	return true;
+}
+
+TArray<FVector> AextractionFPSGameMode::GetAvailableTurretSlots() const
+{
+	// Keep these positions aligned with the six build pads in the Level 1 builder.
+	static const FVector RooftopSlots[] = {
+		FVector(-2250.0f, 1750.0f, 1152.0f),
+		FVector(-2250.0f, -1750.0f, 1152.0f),
+		FVector(2250.0f, 1750.0f, 1152.0f),
+		FVector(2250.0f, -1750.0f, 1152.0f),
+		FVector(-2187.5f, -2000.0f, 1152.0f),
+		FVector(2187.5f, -2000.0f, 1152.0f)
+	};
+	TArray<AActor*> ExistingDefenses;
+	UGameplayStatics::GetAllActorsOfClass(this, ATDDefenseDeployable::StaticClass(), ExistingDefenses);
+	TArray<FVector> AvailableSlots;
+	for (const FVector& Slot : RooftopSlots)
+	{
+		const bool bOccupied = ExistingDefenses.ContainsByPredicate([&Slot](const AActor* ExistingDefense)
+		{
+			const ATDDefenseDeployable* ExistingTurret = Cast<ATDDefenseDeployable>(ExistingDefense);
+			return IsValid(ExistingTurret) && ExistingTurret->IsTurret()
+				&& FVector::DistSquared2D(ExistingDefense->GetActorLocation(), Slot) < FMath::Square(300.0f);
+		});
+		if (!bOccupied)
+		{
+			AvailableSlots.Add(Slot);
+		}
+	}
+	return AvailableSlots;
 }
 
 bool AextractionFPSGameMode::UpgradeNearestTower(const FVector& Location)

@@ -34,12 +34,15 @@ private:
 	TObjectPtr<UTextBlock> HealthText;
 	TObjectPtr<UTextBlock> CameraText;
 	TObjectPtr<UTextBlock> StatusText;
+	TObjectPtr<UTextBlock> ControlHintText;
 	TObjectPtr<UProgressBar> HealthBar;
+	UPROPERTY()
+	TArray<TObjectPtr<UTextBlock>> TurretPlacementArrows;
 
 	void BuildPage();
 	void AddCommandButton(class UVerticalBox* List, int32 Number, const FString& Name, const FString& Cost, const FString& Description);
 	class UButton* AddButton(class UVerticalBox* List, const FString& Label, const FLinearColor& Color);
-	void AddLabel(class UVerticalBox* List, const FString& Label, int32 FontSize, const FLinearColor& Color, bool bBold = false);
+	UTextBlock* AddLabel(class UVerticalBox* List, const FString& Label, int32 FontSize, const FLinearColor& Color, bool bBold = false);
 
 	UFUNCTION() void StartClicked();
 	UFUNCTION() void HelpClicked();

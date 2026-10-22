@@ -2,6 +2,7 @@
 
 #include "Gameplay/TDGameUI.h"
 #include "Blueprint/WidgetTree.h"
+#include "Blueprint/WidgetLayoutLibrary.h"
 
 #include "Components/Border.h"
 #include "Components/Button.h"
@@ -37,15 +38,16 @@ void UTDGameUI::ShowCommandMenu() { CurrentPage = EPage::Command; BuildPage(); }
 void UTDGameUI::ShowPauseMenu() { CurrentPage = EPage::Pause; BuildPage(); }
 void UTDGameUI::ShowHUD() { CurrentPage = EPage::HUD; BuildPage(); RefreshDisplay(); }
 
-void UTDGameUI::AddLabel(UVerticalBox* List, const FString& Label, int32 FontSize, const FLinearColor& Color, bool bBold)
+UTextBlock* UTDGameUI::AddLabel(UVerticalBox* List, const FString& Label, int32 FontSize, const FLinearColor& Color, bool bBold)
 {
-	if (!List || !WidgetTree) return;
+	if (!List || !WidgetTree) return nullptr;
 	UTextBlock* Text = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
 	Text->SetText(FText::FromString(Label));
 	Text->SetColorAndOpacity(FSlateColor(Color));
 	Text->SetFont(FCoreStyle::GetDefaultFontStyle(bBold ? TEXT("Bold") : TEXT("Regular"), FontSize));
 	Text->SetAutoWrapText(true);
 	if (UVerticalBoxSlot* BoxSlot = List->AddChildToVerticalBox(Text)) BoxSlot->SetPadding(FMargin(0.0f, 4.0f));
+	return Text;
 }
 
 UButton* UTDGameUI::AddButton(UVerticalBox* List, const FString& Label, const FLinearColor& Color)
@@ -99,7 +101,7 @@ void UTDGameUI::AddCommandButton(UVerticalBox* List, int32 Number, const FString
 void UTDGameUI::BuildPage()
 {
 	if (!WidgetTree) return;
-	WaveText = nullptr; CreditsText = nullptr; ZombieText = nullptr; HealthText = nullptr; CameraText = nullptr; StatusText = nullptr; HealthBar = nullptr;
+	WaveText = nullptr; CreditsText = nullptr; ZombieText = nullptr; HealthText = nullptr; CameraText = nullptr; StatusText = nullptr; ControlHintText = nullptr; HealthBar = nullptr; TurretPlacementArrows.Reset();
 	UCanvasPanel* Root = RootCanvas;
 	if (!Root)
 	{
@@ -156,7 +158,23 @@ void UTDGameUI::BuildPage()
 		StatusText->SetColorAndOpacity(FSlateColor(TDUIStyle::Cyan));
 		StatusText->SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 14));
 		BottomContent->AddChildToVerticalBox(StatusText);
-		AddLabel(BottomContent, TEXT("WASD / ARROWS  CHOOSE ROAD FROM OUTPOST     •     SPACE / HOME  RETURN TO OUTPOST     •     B  COMMANDS     •     ESC  PAUSE"), 12, TDUIStyle::Muted);
+		ControlHintText = AddLabel(BottomContent, TEXT("WASD / ARROWS  CHOOSE ROAD FROM OUTPOST     •     SPACE / HOME  RETURN TO OUTPOST     •     B  COMMANDS     •     ESC  PAUSE"), 12, TDUIStyle::Muted);
+		for (int32 ArrowIndex = 0; ArrowIndex < 6; ++ArrowIndex)
+		{
+			UTextBlock* Arrow = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
+			Arrow->SetText(FText::FromString(TEXT("|\nV")));
+			Arrow->SetColorAndOpacity(FSlateColor(TDUIStyle::Yellow));
+			Arrow->SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 40));
+			Arrow->SetJustification(ETextJustify::Center);
+			Arrow->SetShadowColorAndOpacity(FLinearColor(0.02f, 0.03f, 0.04f, 0.95f));
+			Arrow->SetShadowOffset(FVector2D(2.0f, 3.0f));
+			UCanvasPanelSlot* ArrowSlot = Root->AddChildToCanvas(Arrow);
+			ArrowSlot->SetAnchors(FAnchors(0.0f, 0.0f));
+			ArrowSlot->SetAlignment(FVector2D(0.5f, 0.5f));
+			ArrowSlot->SetSize(FVector2D(58.0f, 74.0f));
+			Arrow->SetVisibility(ESlateVisibility::Collapsed);
+			TurretPlacementArrows.Add(Arrow);
+		}
 		return;
 	}
 
@@ -192,7 +210,7 @@ void UTDGameUI::BuildPage()
 		AddLabel(Content, TEXT("THE MISSION"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("Survive five zombie waves. Defenses fire automatically. When the final wave falls, reach the helicopter beyond the city exit."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("COMMANDS"), 15, TDUIStyle::Cyan, true);
-		AddLabel(Content, TEXT("B opens the build and upgrade menu. Choose an action there, or use keys 1–7 for a quick action. Turrets use rooftop pads. Mouse position selects the target for airstrikes and upgrades."), 15, FLinearColor::White);
+		AddLabel(Content, TEXT("B opens the build and upgrade menu. Choose an action there, or use keys 1–7 for a quick action. Select Turret, then click a yellow arrow above a free rooftop pad. Right-click or press Esc to cancel; credits are spent only after placement."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("CAMERA VIEWS"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("Use WASD or the arrow keys to fly along one of four straight camera lines. Every camera view points at the outpost. Press Space or Home to return above it before choosing a different road. The camera cannot stop between the five fixed views."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("Earn 10 credits for each zombie defeated. Spend credits between waves to prepare."), 14, TDUIStyle::Muted);
@@ -203,7 +221,7 @@ void UTDGameUI::BuildPage()
 	{
 		AddLabel(Content, TEXT("OUTPOST COMMAND"), 26, TDUIStyle::Yellow, true);
 		AddLabel(Content, TEXT("Choose a defense or upgrade. The game pauses while this panel is open."), 13, TDUIStyle::Muted);
-		AddCommandButton(Content, 1, TEXT("ROOFTOP TURRET"), TEXT("60"), TEXT("Automatic fire at nearby zombies. Added to the next free rooftop pad."));
+		AddCommandButton(Content, 1, TEXT("ROOFTOP TURRET"), TEXT("60"), TEXT("Choose where it goes: click a yellow arrow above any free rooftop pad. Credits are charged after placement."));
 		AddCommandButton(Content, 2, TEXT("GUARD BOT"), TEXT("90"), TEXT("Mobile support that attacks zombies around the outpost."));
 		AddCommandButton(Content, 3, TEXT("BARBED WIRE"), TEXT("35"), TEXT("Slows and damages zombies approaching the walls."));
 		AddCommandButton(Content, 4, TEXT("REPAIR OUTPOST"), TEXT("40"), TEXT("Restore up to 300 integrity."));
@@ -243,6 +261,51 @@ void UTDGameUI::RefreshDisplay()
 	{
 		const AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer());
 		CameraText->SetText(FText::FromString(FString::Printf(TEXT("CAM: %s"), PC ? *PC->GetCameraStopName() : TEXT("OUTPOST"))));
+	}
+	if (ControlHintText)
+	{
+		const AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer());
+		const bool bPlacingTurret = PC && PC->IsTurretPlacementPending();
+		FString Hint = bPlacingTurret
+			? TEXT("WASD / ARROWS  SHOW ROOFTOP PADS     •     CLICK A YELLOW ARROW TO PLACE     •     RIGHT CLICK / ESC  CANCEL")
+			: TEXT("WASD / ARROWS  CHOOSE ROAD FROM OUTPOST     •     SPACE / HOME  RETURN TO OUTPOST     •     B  COMMANDS     •     ESC  PAUSE");
+		if (bPlacingTurret)
+		{
+			TArray<FVector2D> DebugPositions;
+			PC->GetTurretPlacementScreenPositions(DebugPositions);
+			int32 VisibleSlots = 0;
+			for (const FVector2D& Position : DebugPositions)
+			{
+				if (Position.X > -1000.0f) ++VisibleSlots;
+			}
+			Hint += FString::Printf(TEXT("     •     ROOFTOP PADS IN VIEW: %d/%d"), VisibleSlots, DebugPositions.Num());
+		}
+		ControlHintText->SetText(FText::FromString(Hint));
+		ControlHintText->SetColorAndOpacity(FSlateColor(bPlacingTurret ? TDUIStyle::Yellow : TDUIStyle::Muted));
+	}
+	if (const AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer()))
+	{
+		TArray<FVector2D> MarkerPositions;
+		PC->GetTurretPlacementScreenPositions(MarkerPositions);
+		for (int32 Index = 0; Index < TurretPlacementArrows.Num(); ++Index)
+		{
+			UTextBlock* Arrow = TurretPlacementArrows[Index];
+			if (!Arrow) continue;
+			const float ViewportScale = FMath::Max(UWidgetLayoutLibrary::GetViewportScale(this), 0.01f);
+			const FVector2D Position = MarkerPositions.IsValidIndex(Index) ? MarkerPositions[Index] : FVector2D(-10000.0f, -10000.0f);
+			if (PC->IsTurretPlacementPending() && Position.X > -1000.0f)
+			{
+				if (UCanvasPanelSlot* ArrowSlot = Cast<UCanvasPanelSlot>(Arrow->Slot))
+				{
+					ArrowSlot->SetPosition(Position / ViewportScale);
+				}
+				Arrow->SetVisibility(ESlateVisibility::HitTestInvisible);
+			}
+			else
+			{
+				Arrow->SetVisibility(ESlateVisibility::Collapsed);
+			}
+		}
 	}
 	if (HealthBar) HealthBar->SetPercent(FMath::Clamp(GM->GetOutpostHealth() / 1000.0f, 0.0f, 1.0f));
 	if (StatusText) StatusText->SetText(FText::FromString(GM->GetLastDefenseStatus()));

@@ -18,6 +18,7 @@
 #include "InputCoreTypes.h"
 #include "Engine/World.h"
 #include "Gameplay/TDGameUI.h"
+#include "Gameplay/TDTurretPlacementMarker.h"
 #include "Kismet/KismetSystemLibrary.h"
 
 AShooterPlayerController::AShooterPlayerController()
@@ -110,6 +111,8 @@ void AShooterPlayerController::SetupInputComponent()
 		InputComponent->BindKey(EKeys::Five, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey5);
 		InputComponent->BindKey(EKeys::Six, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey6);
 		InputComponent->BindKey(EKeys::Seven, IE_Pressed, this, &AShooterPlayerController::DefenseHotkey7);
+		InputComponent->BindKey(EKeys::LeftMouseButton, IE_Pressed, this, &AShooterPlayerController::TurretPlacementClick);
+		InputComponent->BindKey(EKeys::RightMouseButton, IE_Pressed, this, &AShooterPlayerController::TurretPlacementCancelClick);
 		InputComponent->BindKey(EKeys::Up, IE_Pressed, this, &AShooterPlayerController::CameraNorth);
 		InputComponent->BindKey(EKeys::W, IE_Pressed, this, &AShooterPlayerController::CameraNorth);
 		InputComponent->BindKey(EKeys::Down, IE_Pressed, this, &AShooterPlayerController::CameraSouth);
@@ -227,11 +230,15 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	{
 		return;
 	}
+	if (Hotkey == 1)
+	{
+		BeginTurretPlacement();
+		return;
+	}
 	const FVector Forward = PlayerPawn ? PlayerPawn->GetActorForwardVector() : GetControlRotation().Vector();
 	const FVector PlaceLocation = GetDefensePlacementLocation();
 	switch (Hotkey)
 	{
-	case 1: GameMode->PurchaseDefense(ETDDefenseType::Turret, PlaceLocation, Forward.Rotation()); break;
 	case 2: GameMode->PurchaseDefense(ETDDefenseType::GuardBot, PlaceLocation, Forward.Rotation()); break;
 	case 3: GameMode->PurchaseDefense(ETDDefenseType::BarbedWire, PlaceLocation, Forward.Rotation()); break;
 	case 4: GameMode->RepairOutpost(); break;
@@ -240,6 +247,152 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	case 7: GameMode->UpgradeOutpostWalls(); break;
 	default: break;
 	}
+}
+
+void AShooterPlayerController::BeginTurretPlacement()
+{
+	AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
+	if (!GameMode || !GameMode->HasGameStarted()) return;
+	if (!GameMode->CanAffordTurret())
+	{
+		GameMode->ShowDefenseStatus(TEXT("TURRET COSTS 60 CREDITS"), FColor::Red);
+		return;
+	}
+
+	ClearTurretPlacementMarkers();
+	TurretPlacementLocations = GameMode->GetAvailableTurretSlots();
+	if (TurretPlacementLocations.IsEmpty())
+	{
+		GameMode->ShowDefenseStatus(TEXT("ALL ROOFTOP TURRET PADS ARE OCCUPIED"), FColor::Red);
+		return;
+	}
+
+	bTurretPlacementPending = true;
+	for (const FVector& Slot : TurretPlacementLocations)
+	{
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+		if (ATDTurretPlacementMarker* Marker = GetWorld()->SpawnActor<ATDTurretPlacementMarker>(
+			ATDTurretPlacementMarker::StaticClass(), Slot, FRotator::ZeroRotator, SpawnParams))
+		{
+			TurretPlacementMarkers.Add(Marker);
+		}
+	}
+
+	if (IsPaused())
+	{
+		CloseOverlayAndResume();
+	}
+	bShowMouseCursor = true;
+	bEnableClickEvents = true;
+	bEnableMouseOverEvents = true;
+	FInputModeGameAndUI InputMode;
+	InputMode.SetHideCursorDuringCapture(false);
+	SetInputMode(InputMode);
+	GameMode->ShowDefenseStatus(TEXT("CHOOSE A ROOFTOP PAD  |  CLICK A YELLOW ARROW  |  RIGHT CLICK TO CANCEL"), FColor(255, 198, 46));
+	UpdateTDHUD();
+}
+
+void AShooterPlayerController::ConfirmTurretPlacement()
+{
+	if (!bTurretPlacementPending || !GetWorld()) return;
+
+	float MouseX = 0.0f;
+	float MouseY = 0.0f;
+	if (!GetMousePosition(MouseX, MouseY)) return;
+
+	int32 NearestSlotIndex = INDEX_NONE;
+	float NearestScreenDistanceSquared = FMath::Square(54.0f);
+	for (int32 SlotIndex = 0; SlotIndex < TurretPlacementLocations.Num(); ++SlotIndex)
+	{
+		FVector2D ScreenLocation;
+		const FVector MarkerPoint = TurretPlacementLocations[SlotIndex] + FVector(0.0f, 0.0f, 260.0f);
+		if (!ProjectWorldLocationToScreen(MarkerPoint, ScreenLocation, true)) continue;
+		const float DistanceSquared = FVector2D::DistSquared(ScreenLocation, FVector2D(MouseX, MouseY));
+		if (DistanceSquared < NearestScreenDistanceSquared)
+		{
+			NearestScreenDistanceSquared = DistanceSquared;
+			NearestSlotIndex = SlotIndex;
+		}
+	}
+
+	if (NearestSlotIndex == INDEX_NONE)
+	{
+		if (AextractionFPSGameMode* GameMode = GetWorld()->GetAuthGameMode<AextractionFPSGameMode>())
+		{
+			GameMode->ShowDefenseStatus(TEXT("CLICK A YELLOW ARROW ABOVE A ROOFTOP PAD"), FColor(255, 198, 46));
+		}
+		return;
+	}
+
+	AextractionFPSGameMode* GameMode = GetWorld()->GetAuthGameMode<AextractionFPSGameMode>();
+	const FRotator TurretRotation = FRotator::ZeroRotator;
+	if (GameMode && GameMode->PurchaseDefense(ETDDefenseType::Turret, TurretPlacementLocations[NearestSlotIndex], TurretRotation))
+	{
+		ClearTurretPlacementMarkers();
+		UpdateTDHUD();
+	}
+	else if (GameMode)
+	{
+		GameMode->ShowDefenseStatus(TEXT("THAT ROOFTOP PAD IS NO LONGER AVAILABLE"), FColor::Red);
+		ClearTurretPlacementMarkers();
+		BeginTurretPlacement();
+	}
+}
+
+void AShooterPlayerController::GetTurretPlacementScreenPositions(TArray<FVector2D>& OutPositions) const
+{
+	OutPositions.Reset(TurretPlacementLocations.Num());
+	int32 ViewportWidth = 0;
+	int32 ViewportHeight = 0;
+	GetViewportSize(ViewportWidth, ViewportHeight);
+	for (const FVector& Slot : TurretPlacementLocations)
+	{
+		FVector2D ScreenLocation(-10000.0f, -10000.0f);
+		if (bTurretPlacementPending)
+		{
+			ProjectWorldLocationToScreen(Slot + FVector(0.0f, 0.0f, 260.0f), ScreenLocation, true);
+			if (ScreenLocation.X < 0.0f || ScreenLocation.Y < 0.0f
+				|| ScreenLocation.X > ViewportWidth || ScreenLocation.Y > ViewportHeight)
+			{
+				ScreenLocation = FVector2D(-10000.0f, -10000.0f);
+			}
+		}
+		OutPositions.Add(ScreenLocation);
+	}
+}
+
+void AShooterPlayerController::CancelTurretPlacement()
+{
+	if (!bTurretPlacementPending) return;
+	ClearTurretPlacementMarkers();
+	if (AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr)
+	{
+		GameMode->ShowDefenseStatus(TEXT("TURRET PLACEMENT CANCELED  |  NO CREDITS SPENT"), FColor(0, 230, 255));
+	}
+	UpdateTDHUD();
+}
+
+void AShooterPlayerController::ClearTurretPlacementMarkers()
+{
+	bTurretPlacementPending = false;
+	for (ATDTurretPlacementMarker* Marker : TurretPlacementMarkers)
+	{
+		if (IsValid(Marker)) Marker->Destroy();
+	}
+	TurretPlacementMarkers.Reset();
+	TurretPlacementLocations.Reset();
+}
+
+void AShooterPlayerController::TurretPlacementClick()
+{
+	ConfirmTurretPlacement();
+}
+
+void AShooterPlayerController::TurretPlacementCancelClick()
+{
+	CancelTurretPlacement();
 }
 
 void AShooterPlayerController::ExecuteDefenseAction(uint8 Hotkey)
@@ -310,6 +463,11 @@ void AShooterPlayerController::TogglePauseMenu()
 	if (!TDGameUI) return;
 	AextractionFPSGameMode* GM = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
 	if (!GM || !GM->HasGameStarted()) return;
+	if (bTurretPlacementPending)
+	{
+		CancelTurretPlacement();
+		return;
+	}
 	if (IsPaused()) { CloseOverlayAndResume(); return; }
 	SetPause(true);
 	TDGameUI->ShowPauseMenu();

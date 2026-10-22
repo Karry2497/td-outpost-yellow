@@ -27,3 +27,5 @@ Add a short entry only when an iteration produces a specific, repeatable lesson 
 - For fixed tower-defense camera stops, use the level's world axes and lane centers to define destinations, animate the camera actor between full transforms, and ignore new stop input until arrival; show the current stop and controls in the HUD.
 - When camera stops are connected by drawn radial rails, keep the camera's XY path on each rail and recalculate its rotation toward the outpost throughout the flight.
 - Require camera travel to return to the outpost center before changing road spokes; otherwise stop selection permits a diagonal shortcut across the map.
+- For fixed tower pads, show world-space markers for every available slot, select the pad by clicking near its projected marker, and deduct currency only after the placement succeeds.
+- Projected pixel coordinates must be divided by Unreal's viewport DPI scale before positioning UMG arrows; limit visible arrows to positions inside the player viewport.

@@ -21,6 +21,7 @@ Use roughly 75% of the linked tower-defense video as inspiration for the tower-a
 - Playable footprint: 240 m east-west by 200 m north-south.
 - Primary lanes: three abandoned road approaches from the west, east and south. Each ends at an outpost wall; none passes through or around the courtyard.
 - Tower placement: six clearly marked, low build pads sit on the shoulders of the three approach lanes, two per lane. They keep the zombie paths clear and give towers overlapping coverage options.
+- Selecting a turret enters placement mode and shows yellow downward arrows above each available rooftop pad. Click an arrow to place and pay; occupied pads are hidden. Right-click or Escape cancels without spending credits.
 - Buildings: three-storey windowed blocks border the outer edge of the firing walk along the rear and sides. Their corners leave the full west and east walls and the connected walk exposed; sealed corner blocks close ground-level bypass gaps. A connected rear support building closes the northern edge without blocking the walk.
 - Wreckage: damaged, stationary cars and rubble sit on the approach roads. No traffic or moving vehicles are present.
 - Extraction: the southern street is visually extended beyond the city edge to an orange-bordered landing apron, with an H touchdown mark and a simple parked helicopter greybox. This communicates the extraction destination; an unlockable player route and extraction trigger remain gameplay tasks.

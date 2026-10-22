@@ -7,6 +7,7 @@
 #include "ShooterPlayerController.generated.h"
 
 class UInputMappingContext;
+class ATDTurretPlacementMarker;
 class AShooterCharacter;
 class UShooterBulletCounterUI;
 class UTDGameUI;
@@ -98,6 +99,10 @@ protected:
 	/** Returns true if the player should use UMG touch controls */
 	bool ShouldUseTouchControls() const;
 	void UseDefenseHotkey(uint8 Hotkey);
+	void BeginTurretPlacement();
+	void ConfirmTurretPlacement();
+	void CancelTurretPlacement();
+	void ClearTurretPlacementMarkers();
 	FVector GetDefensePlacementLocation() const;
 	void DefenseHotkey1();
 	void DefenseHotkey2();
@@ -114,6 +119,8 @@ protected:
 	void MoveToCameraStop(uint8 StopIndex);
 	void UpdateCameraStopLabel();
 	FTransform GetCameraStopTransform(uint8 StopIndex) const;
+	void TurretPlacementClick();
+	void TurretPlacementCancelClick();
 
 public:
 	AShooterPlayerController();
@@ -136,10 +143,18 @@ public:
 private:
 	UPROPERTY()
 	TObjectPtr<ACameraActor> DefenseCamera;
+	UPROPERTY()
+	TArray<TObjectPtr<ATDTurretPlacementMarker>> TurretPlacementMarkers;
+	TArray<FVector> TurretPlacementLocations;
 	uint8 CurrentCameraStop = 0;
 	bool bCameraTransitioning = false;
+	bool bTurretPlacementPending = false;
 	float CameraTransitionElapsed = 0.0f;
 	float CameraTransitionDuration = 0.85f;
 	FTransform CameraTransitionStart;
 	FTransform CameraTransitionTarget;
+
+public:
+	bool IsTurretPlacementPending() const { return bTurretPlacementPending; }
+	void GetTurretPlacementScreenPositions(TArray<FVector2D>& OutPositions) const;
 };
