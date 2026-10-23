@@ -64,7 +64,7 @@ private:
 	FString LastDefenseStatus = TEXT("DEFEND THE OUTPOST  •  Build defenses from the command menu");
 
 public:
-	void NotifyZombieKilled(ATDZombieCharacter* Zombie);
+	void NotifyZombieKilled(ATDZombieCharacter* Zombie, bool bAwardCredits = true);
 	void DamageOutpost(float Damage);
 	bool PurchaseDefense(ETDDefenseType Type, const FVector& Location, const FRotator& Rotation);
 	TArray<FVector> GetAvailableTurretSlots() const;

@@ -33,6 +33,18 @@ namespace
 		}
 		return Material;
 	}
+
+	void TintComponent(UStaticMeshComponent* Component, const FLinearColor& Color)
+	{
+		if (Component)
+		{
+			if (UMaterialInstanceDynamic* Material = Cast<UMaterialInstanceDynamic>(Component->GetMaterial(0)))
+			{
+				Material->SetVectorParameterValue(TEXT("Color"), Color);
+				Material->SetVectorParameterValue(TEXT("BaseColor"), Color);
+			}
+		}
+	}
 }
 
 ATDZombieCharacter::ATDZombieCharacter()
@@ -198,7 +210,10 @@ void ATDZombieCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
-	GetWorldTimerManager().SetTimer(AttackTimer, this, &ATDZombieCharacter::AttackOutpost, 2.0f, true, 2.0f);
+	if (Archetype != ETDZombieArchetype::Exploder)
+	{
+		GetWorldTimerManager().SetTimer(AttackTimer, this, &ATDZombieCharacter::AttackOutpost, AttackInterval, true, AttackInterval);
+	}
 }
 
 void ATDZombieCharacter::Tick(float DeltaSeconds)
@@ -217,6 +232,11 @@ void ATDZombieCharacter::Tick(float DeltaSeconds)
 	else
 	{
 		GetCharacterMovement()->StopMovementImmediately();
+		if (Archetype == ETDZombieArchetype::Exploder && !bExploderFuseStarted)
+		{
+			bExploderFuseStarted = true;
+			GetWorldTimerManager().SetTimer(ExploderFuseTimer, this, &ATDZombieCharacter::ExploderFuseExpired, 3.0f, false);
+		}
 	}
 }
 
@@ -229,42 +249,72 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 {
 	Archetype = NewArchetype;
 	const float WaveHealthScale = 1.0f + FMath::Max(0, WaveNumber - 1) * 0.18f;
+	AttackInterval = 2.0f;
+	OutpostDamage = 5.0f;
+	ExplosionDamage = 150.0f;
+	GetMesh()->SetRelativeScale3D(FVector(1.0f));
+	if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.24f, 0.31f, 0.32f)); }
+	if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.23f, 0.39f, 0.16f)); }
+	if (ChestHarness) { ChestHarness->SetRelativeScale3D(FVector(0.31f, 0.25f, 0.28f)); }
+	if (UtilityBelt) { UtilityBelt->SetRelativeScale3D(FVector(0.36f, 0.28f, 0.09f)); }
 	switch (Archetype)
 	{
-	case ETDZombieArchetype::Runner:
-		Health = 48.0f * WaveHealthScale;
-		MoveSpeed = 430.0f;
-		OutpostDamage = 3.0f;
-		GetMesh()->SetRelativeScale3D(FVector(0.88f));
-		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.19f, 0.25f, 0.28f)); }
-		if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.18f, 0.31f, 0.13f)); }
+	case ETDZombieArchetype::Crawler:
+		Health = 72.0f * WaveHealthScale;
+		MoveSpeed = 115.0f;
+		OutpostDamage = 2.0f;
+		AttackInterval = 2.6f;
+		GetMesh()->SetRelativeScale3D(FVector(0.72f, 0.82f, 0.58f));
+		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.18f, 0.25f, 0.22f)); }
+		TintComponent(ChestHarness, FLinearColor(0.24f, 0.29f, 0.08f));
+		TintComponent(WarningTag, FLinearColor(0.95f, 0.72f, 0.05f));
+		break;
+	case ETDZombieArchetype::RadioactiveRunner:
+		Health = 62.0f * WaveHealthScale;
+		MoveSpeed = 485.0f;
+		OutpostDamage = 2.0f;
+		AttackInterval = 0.55f;
+		GetMesh()->SetRelativeScale3D(FVector(0.9f));
+		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.2f, 0.25f, 0.27f)); }
+		TintComponent(ChestHarness, FLinearColor(0.05f, 0.58f, 0.20f));
+		TintComponent(HazardStripe, FLinearColor(0.25f, 1.0f, 0.12f));
+		TintComponent(HeadLamp, FLinearColor(0.35f, 1.0f, 0.12f));
 		break;
 	case ETDZombieArchetype::Brute:
-		Health = 220.0f * WaveHealthScale;
-		MoveSpeed = 185.0f;
-		OutpostDamage = 12.0f;
-		GetMesh()->SetRelativeScale3D(FVector(1.22f));
-		if (ChestHarness)
-		{
-			ChestHarness->SetRelativeScale3D(FVector(0.40f, 0.35f, 0.34f));
-		}
-		if (ShoulderArmor)
-		{
-			ShoulderArmor->SetRelativeScale3D(FVector(0.31f, 0.48f, 0.23f));
-		}
+		Health = 320.0f * WaveHealthScale;
+		MoveSpeed = 155.0f;
+		OutpostDamage = 24.0f;
+		AttackInterval = 3.4f;
+		GetMesh()->SetRelativeScale3D(FVector(1.3f));
+		if (ChestHarness) { ChestHarness->SetRelativeScale3D(FVector(0.42f, 0.36f, 0.36f)); }
+		if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.32f, 0.49f, 0.24f)); }
 		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.30f, 0.37f, 0.38f)); }
 		if (UtilityBelt) { UtilityBelt->SetRelativeScale3D(FVector(0.44f, 0.34f, 0.12f)); }
+		TintComponent(ChestHarness, FLinearColor(0.24f, 0.08f, 0.045f));
+		TintComponent(ShoulderArmor, FLinearColor(0.58f, 0.19f, 0.04f));
+		break;
+	case ETDZombieArchetype::Exploder:
+		Health = 68.0f * WaveHealthScale;
+		MoveSpeed = 440.0f;
+		OutpostDamage = 0.0f;
+		GetMesh()->SetRelativeScale3D(FVector(0.94f));
+		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.30f, 0.32f, 0.36f)); }
+		TintComponent(ChestHarness, FLinearColor(0.88f, 0.12f, 0.035f));
+		TintComponent(WarningTag, FLinearColor(1.0f, 0.13f, 0.025f));
+		TintComponent(HeadLamp, FLinearColor(1.0f, 0.24f, 0.02f));
 		break;
 	default:
 		Health = 70.0f * WaveHealthScale;
 		MoveSpeed = 285.0f;
 		OutpostDamage = 5.0f;
-		GetMesh()->SetRelativeScale3D(FVector(1.0f));
-		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.24f, 0.31f, 0.32f)); }
-		if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.23f, 0.39f, 0.16f)); }
 		break;
 	}
 	GetCharacterMovement()->MaxWalkSpeed = MoveSpeed;
+	GetWorldTimerManager().ClearTimer(AttackTimer);
+	if (HasActorBegunPlay() && Archetype != ETDZombieArchetype::Exploder)
+	{
+		GetWorldTimerManager().SetTimer(AttackTimer, this, &ATDZombieCharacter::AttackOutpost, AttackInterval, true, AttackInterval);
+	}
 }
 
 float ATDZombieCharacter::TakeDamage(float Damage, const FDamageEvent& DamageEvent,
@@ -295,7 +345,20 @@ void ATDZombieCharacter::AttackOutpost()
 	}
 }
 
-void ATDZombieCharacter::Die()
+void ATDZombieCharacter::ExploderFuseExpired()
+{
+	if (bIsDead || Archetype != ETDZombieArchetype::Exploder)
+	{
+		return;
+	}
+	if (AextractionFPSGameMode* GameMode = GetWorld()->GetAuthGameMode<AextractionFPSGameMode>())
+	{
+		GameMode->DamageOutpost(ExplosionDamage);
+	}
+	Die(false);
+}
+
+void ATDZombieCharacter::Die(bool bAwardCredits)
 {
 	if (bIsDead)
 	{
@@ -304,13 +367,14 @@ void ATDZombieCharacter::Die()
 
 	bIsDead = true;
 	GetWorldTimerManager().ClearTimer(AttackTimer);
+	GetWorldTimerManager().ClearTimer(ExploderFuseTimer);
 	GetCharacterMovement()->StopMovementImmediately();
 	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 
 	if (AextractionFPSGameMode* GameMode = GetWorld()->GetAuthGameMode<AextractionFPSGameMode>())
 	{
-		GameMode->NotifyZombieKilled(this);
+		GameMode->NotifyZombieKilled(this, bAwardCredits);
 	}
 	Destroy();
 }

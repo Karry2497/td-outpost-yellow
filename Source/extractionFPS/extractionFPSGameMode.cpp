@@ -67,7 +67,7 @@ void AextractionFPSGameMode::StartNextWave()
 		return;
 	}
 	++CurrentWave;
-	ZombiesLeftToSpawn = 4 + CurrentWave * 2;
+	ZombiesLeftToSpawn = 8 + CurrentWave * 4;
 
 	ShowDefenseStatus(FString::Printf(TEXT("WAVE %d INBOUND  •  %d ZOMBIES"), CurrentWave, ZombiesLeftToSpawn), FColor(255, 220, 0));
 
@@ -109,27 +109,38 @@ void AextractionFPSGameMode::SpawnNextZombie()
 		Zombie->SetOutpostTarget(WallTargets[Lane]);
 		ETDZombieArchetype Archetype = ETDZombieArchetype::Walker;
 		const float VariantRoll = FMath::FRand();
-		if (CurrentWave >= 4 && VariantRoll < 0.22f)
+		if (CurrentWave >= 4 && VariantRoll < 0.16f)
+		{
+			Archetype = ETDZombieArchetype::Exploder;
+		}
+		else if (CurrentWave >= 3 && VariantRoll < 0.32f)
 		{
 			Archetype = ETDZombieArchetype::Brute;
 		}
 		else if (CurrentWave >= 2 && VariantRoll < 0.52f)
 		{
-			Archetype = ETDZombieArchetype::Runner;
+			Archetype = ETDZombieArchetype::RadioactiveRunner;
+		}
+		else if (VariantRoll < 0.76f)
+		{
+			Archetype = ETDZombieArchetype::Crawler;
 		}
 		Zombie->SetArchetype(Archetype, CurrentWave);
 		ActiveZombies.Add(Zombie);
 	}
 
 	--ZombiesLeftToSpawn;
-	GetWorldTimerManager().SetTimer(SpawnTimer, this, &AextractionFPSGameMode::SpawnNextZombie, 1.25f, false);
+	GetWorldTimerManager().SetTimer(SpawnTimer, this, &AextractionFPSGameMode::SpawnNextZombie, 0.8f, false);
 }
 
-void AextractionFPSGameMode::NotifyZombieKilled(ATDZombieCharacter* Zombie)
+void AextractionFPSGameMode::NotifyZombieKilled(ATDZombieCharacter* Zombie, bool bAwardCredits)
 {
 	ActiveZombies.Remove(Zombie);
-	Credits += 10;
-	ShowDefenseStatus(FString::Printf(TEXT("ZOMBIE ELIMINATED  •  +10 CREDITS  •  %d AVAILABLE"), Credits), FColor(130, 255, 40));
+	if (bAwardCredits)
+	{
+		Credits += 10;
+		ShowDefenseStatus(FString::Printf(TEXT("ZOMBIE ELIMINATED  •  +10 CREDITS  •  %d AVAILABLE"), Credits), FColor(130, 255, 40));
+	}
 	CheckForWaveCompletion();
 }
 
@@ -213,14 +224,12 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 
 TArray<FVector> AextractionFPSGameMode::GetAvailableTurretSlots() const
 {
-	// Keep these positions aligned with the six build pads in the Level 1 builder.
+	// These world-space positions mirror the builder's twelve pads after its 0.8 scale.
 	static const FVector RooftopSlots[] = {
-		FVector(-2250.0f, 1750.0f, 1152.0f),
-		FVector(-2250.0f, -1750.0f, 1152.0f),
-		FVector(2250.0f, 1750.0f, 1152.0f),
-		FVector(2250.0f, -1750.0f, 1152.0f),
-		FVector(-2187.5f, -2000.0f, 1152.0f),
-		FVector(2187.5f, -2000.0f, 1152.0f)
+		FVector(-1840.0f, 1840.0f, 912.0f), FVector(-4000.0f, 1840.0f, 912.0f), FVector(-1840.0f, 4000.0f, 912.0f),
+		FVector(1840.0f, 1840.0f, 912.0f), FVector(4000.0f, 1840.0f, 912.0f), FVector(1840.0f, 4000.0f, 912.0f),
+		FVector(-1840.0f, -1840.0f, 912.0f), FVector(-4000.0f, -1840.0f, 912.0f), FVector(-1840.0f, -4000.0f, 912.0f),
+		FVector(1840.0f, -1840.0f, 912.0f), FVector(4000.0f, -1840.0f, 912.0f), FVector(1840.0f, -4000.0f, 912.0f)
 	};
 	TArray<AActor*> ExistingDefenses;
 	UGameplayStatics::GetAllActorsOfClass(this, ATDDefenseDeployable::StaticClass(), ExistingDefenses);

@@ -12,8 +12,10 @@ UENUM(BlueprintType)
 enum class ETDZombieArchetype : uint8
 {
 	Walker,
-	Runner,
-	Brute
+	Crawler,
+	RadioactiveRunner,
+	Brute,
+	Exploder
 };
 
 /** Bright, readable zombie used by the first tower-defense wave prototype. */
@@ -37,7 +39,8 @@ protected:
 
 private:
 	void AttackOutpost();
-	void Die();
+	void ExploderFuseExpired();
+	void Die(bool bAwardCredits = true);
 
 	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
 	TObjectPtr<UStaticMeshComponent> ChestHarness;
@@ -69,6 +72,12 @@ private:
 	UPROPERTY(EditAnywhere, Category="Zombie|Combat", meta=(ClampMin="0.0"))
 	float OutpostDamage = 18.0f;
 
+	UPROPERTY(EditAnywhere, Category="Zombie|Combat", meta=(ClampMin="0.1"))
+	float AttackInterval = 2.0f;
+
+	UPROPERTY(EditAnywhere, Category="Zombie|Combat", meta=(ClampMin="0.0"))
+	float ExplosionDamage = 150.0f;
+
 	UPROPERTY(EditAnywhere, Category="Zombie|Combat", meta=(ClampMin="1.0"))
 	float AttackRange = 255.0f;
 
@@ -79,5 +88,7 @@ private:
 
 	FVector OutpostTarget = FVector::ZeroVector;
 	FTimerHandle AttackTimer;
+	FTimerHandle ExploderFuseTimer;
 	bool bIsDead = false;
+	bool bExploderFuseStarted = false;
 };

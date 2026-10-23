@@ -271,15 +271,21 @@ def main():
     for i, y in enumerate(range(-10000, -2500, 1000)):
         box(cube, "Road marking / south dash %02d" % i, 0.0, y, 2.0, 34.0, 430.0, 4.0, road_mark)
 
-    # Six turret pads sit on building rooftops, clear of zombie lanes and
-    # rooftop equipment. Their world coordinates are mirrored by GameMode.
+    # Twelve turret pads sit on building rooftops, with three options around
+    # each approach. Their scaled world coordinates are mirrored by GameMode.
     tower_pad_locations = (
-        ("northwest / west lane", -2250.0, 1750.0, 1120.0),
-        ("southwest / west lane", -2250.0, -1750.0, 1120.0),
-        ("northeast / east lane", 2250.0, 1750.0, 1120.0),
-        ("southeast / east lane", 2250.0, -1750.0, 1120.0),
-        ("southwest / south lane", -2187.5, -2000.0, 1120.0),
-        ("southeast / south lane", 2187.5, -2000.0, 1120.0),
+        ("northwest / inner west", -2300.0, 2300.0, 1120.0),
+        ("northwest / outer west", -5000.0, 2300.0, 1120.0),
+        ("northwest / rear", -2300.0, 5000.0, 1120.0),
+        ("northeast / inner east", 2300.0, 2300.0, 1120.0),
+        ("northeast / outer east", 5000.0, 2300.0, 1120.0),
+        ("northeast / rear", 2300.0, 5000.0, 1120.0),
+        ("southwest / inner west", -2300.0, -2300.0, 1120.0),
+        ("southwest / outer west", -5000.0, -2300.0, 1120.0),
+        ("southwest / rear", -2300.0, -5000.0, 1120.0),
+        ("southeast / inner east", 2300.0, -2300.0, 1120.0),
+        ("southeast / outer east", 5000.0, -2300.0, 1120.0),
+        ("southeast / rear", 2300.0, -5000.0, 1120.0),
     )
     for label, pad_x, pad_y, roof_z in tower_pad_locations:
         build_pad(cube, "Defense build pad / " + label, pad_x, pad_y, roof_z, build_pad_mat, build_pad_mark)
