@@ -18,7 +18,10 @@ enum class ETDDefenseType : uint8
 {
 	Turret,
 	GuardBot,
-	BarbedWire
+	BarbedWire,
+	HeavyTurret,
+	MineTurret,
+	ArtilleryTurret
 };
 
 /**
@@ -68,7 +71,7 @@ public:
 	void DamageOutpost(float Damage);
 	bool PurchaseDefense(ETDDefenseType Type, const FVector& Location, const FRotator& Rotation);
 	TArray<FVector> GetAvailableTurretSlots() const;
-	bool CanAffordTurret() const { return Credits >= 60; }
+	bool CanAffordTurret(ETDDefenseType Type = ETDDefenseType::Turret) const;
 	bool UpgradeNearestTower(const FVector& Location);
 	bool RepairOutpost();
 	bool UpgradeOutpostWalls();

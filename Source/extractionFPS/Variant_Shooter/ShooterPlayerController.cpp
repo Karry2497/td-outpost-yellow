@@ -240,7 +240,7 @@ void AShooterPlayerController::UseDefenseHotkey(uint8 Hotkey)
 	}
 	if (Hotkey == 1)
 	{
-		BeginTurretPlacement();
+		OpenTurretShop();
 		return;
 	}
 	const FVector Forward = PlayerPawn ? PlayerPawn->GetActorForwardVector() : GetControlRotation().Vector();
@@ -294,13 +294,29 @@ void AShooterPlayerController::CancelAirstrikeTarget()
 
 void AShooterPlayerController::BeginTurretPlacement()
 {
+	OpenTurretShop();
+}
+
+void AShooterPlayerController::OpenTurretShop()
+{
+	if (!TDGameUI) return;
+	SetPause(true);
+	TDGameUI->ShowTurretShop();
+	bShowMouseCursor = true;
+	SetInputMode(FInputModeUIOnly());
+}
+
+void AShooterPlayerController::BeginTurretPlacement(ETDDefenseType Type)
+{
 	AextractionFPSGameMode* GameMode = GetWorld() ? GetWorld()->GetAuthGameMode<AextractionFPSGameMode>() : nullptr;
 	if (!GameMode || !GameMode->HasGameStarted()) return;
-	if (!GameMode->CanAffordTurret())
+	if (!GameMode->CanAffordTurret(Type))
 	{
-		GameMode->ShowDefenseStatus(TEXT("TURRET COSTS 60 CREDITS"), FColor::Red);
+		const int32 Cost = Type == ETDDefenseType::Turret ? 60 : Type == ETDDefenseType::HeavyTurret ? 125 : Type == ETDDefenseType::MineTurret ? 160 : 210;
+		GameMode->ShowDefenseStatus(FString::Printf(TEXT("THIS TURRET COSTS %d CREDITS"), Cost), FColor::Red);
 		return;
 	}
+	PendingTurretType = Type;
 
 	ClearTurretPlacementMarkers();
 	TurretPlacementLocations = GameMode->GetAvailableTurretSlots();
@@ -371,7 +387,7 @@ void AShooterPlayerController::ConfirmTurretPlacement()
 
 	AextractionFPSGameMode* GameMode = GetWorld()->GetAuthGameMode<AextractionFPSGameMode>();
 	const FRotator TurretRotation = FRotator::ZeroRotator;
-	if (GameMode && GameMode->PurchaseDefense(ETDDefenseType::Turret, TurretPlacementLocations[NearestSlotIndex], TurretRotation))
+	if (GameMode && GameMode->PurchaseDefense(PendingTurretType, TurretPlacementLocations[NearestSlotIndex], TurretRotation))
 	{
 		ClearTurretPlacementMarkers();
 		UpdateTDHUD();
@@ -380,7 +396,7 @@ void AShooterPlayerController::ConfirmTurretPlacement()
 	{
 		GameMode->ShowDefenseStatus(TEXT("THAT ROOFTOP PAD IS NO LONGER AVAILABLE"), FColor::Red);
 		ClearTurretPlacementMarkers();
-		BeginTurretPlacement();
+		BeginTurretPlacement(PendingTurretType);
 	}
 }
 

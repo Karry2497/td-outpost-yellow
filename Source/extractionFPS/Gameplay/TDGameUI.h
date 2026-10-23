@@ -19,13 +19,14 @@ public:
 	void ShowMainMenu();
 	void ShowHelp();
 	void ShowCommandMenu();
+	void ShowTurretShop();
 	void ShowPauseMenu();
 	void ShowAirstrikeTargetMenu();
 	void ShowHUD();
 	void RefreshDisplay();
 
 private:
-	enum class EPage : uint8 { Main, Help, Command, Pause, Airstrike, HUD };
+	enum class EPage : uint8 { Main, Help, Command, TurretShop, Pause, Airstrike, HUD };
 	EPage CurrentPage = EPage::Main;
 	UPROPERTY()
 	TObjectPtr<UCanvasPanel> RootCanvas;
@@ -60,6 +61,10 @@ private:
 	UFUNCTION() void Action5Clicked();
 	UFUNCTION() void Action6Clicked();
 	UFUNCTION() void Action7Clicked();
+	UFUNCTION() void TurretMediumClicked();
+	UFUNCTION() void TurretHeavyClicked();
+	UFUNCTION() void TurretMineClicked();
+	UFUNCTION() void TurretArtilleryClicked();
 	UFUNCTION() void AirstrikeWestClicked();
 	UFUNCTION() void AirstrikeEastClicked();
 	UFUNCTION() void AirstrikeSouthClicked();

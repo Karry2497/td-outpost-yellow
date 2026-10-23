@@ -12,6 +12,7 @@ class AShooterCharacter;
 class UShooterBulletCounterUI;
 class UTDGameUI;
 class ACameraActor;
+enum class ETDDefenseType : uint8;
 
 /**
  *  Simple PlayerController for a first person shooter game
@@ -132,6 +133,8 @@ public:
 	uint8 GetCameraStopIndex() const { return CurrentCameraStop; }
 	void StartDefense();
 	void ExecuteDefenseAction(uint8 Hotkey);
+	void OpenTurretShop();
+	void BeginTurretPlacement(ETDDefenseType Type);
 	void ToggleCommandMenu();
 	void TogglePauseMenu();
 	void ShowMainMenu();
@@ -152,6 +155,7 @@ private:
 	UPROPERTY()
 	TArray<TObjectPtr<ATDTurretPlacementMarker>> TurretPlacementMarkers;
 	TArray<FVector> TurretPlacementLocations;
+	ETDDefenseType PendingTurretType;
 	uint8 CurrentCameraStop = 0;
 	bool bCameraTransitioning = false;
 	bool bTurretPlacementPending = false;

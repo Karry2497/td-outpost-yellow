@@ -7,6 +7,7 @@
 #include "Engine/DamageEvents.h"
 #include "Engine/World.h"
 #include "Gameplay/TDZombieCharacter.h"
+#include "Gameplay/TDDefenseProjectile.h"
 #include "Kismet/GameplayStatics.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Materials/MaterialInterface.h"
@@ -106,6 +107,19 @@ ATDDefenseDeployable::ATDDefenseDeployable()
 	AddPart(TurretModelParts, TEXT("Turret Muzzle Right"), TEXT("Cylinder"), FVector(196, 27, 91), FVector(0.19f, 0.19f, 0.14f), FRotator(90, 0, 0), FLinearColor(1.0f, 0.55f, 0.08f));
 	AddPart(TurretModelParts, TEXT("Turret Optic"), TEXT("Sphere"), FVector(36, 0, 154), FVector(0.19f, 0.19f, 0.19f), FRotator(0, 0, 0), FLinearColor(0.12f, 1.0f, 0.78f));
 	AddPart(TurretModelParts, TEXT("Turret Antenna"), TEXT("Cylinder"), FVector(-58, 52, 161), FVector(0.035f, 0.035f, 0.32f), FRotator(0, 0, 0), FLinearColor(0.84f, 0.90f, 0.82f));
+	// Each purchased tower keeps the shared readable base but gains a silhouette cue.
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Reinforced Breech"), TEXT("Cube"), FVector(105, 0, 92), FVector(0.50f, 0.56f, 0.49f), FRotator(0, 0, 0), FLinearColor(0.18f, 0.22f, 0.24f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Cannon Barrel"), TEXT("Cylinder"), FVector(215, 0, 92), FVector(0.30f, 0.30f, 1.10f), FRotator(90, 0, 0), FLinearColor(0.11f, 0.14f, 0.16f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Muzzle Band"), TEXT("Cylinder"), FVector(315, 0, 92), FVector(0.37f, 0.37f, 0.16f), FRotator(90, 0, 0), FLinearColor(1.0f, 0.55f, 0.08f));
+	for (int32 Tube = 0; Tube < 4; ++Tube)
+	{
+		const float Y = (Tube % 2 == 0 ? -1.0f : 1.0f) * 39.0f;
+		const float Z = 112.0f + (Tube < 2 ? 0.0f : 42.0f);
+		AddPart(MineTurretModelParts, *FString::Printf(TEXT("Mine Launch Tube %d"), Tube), TEXT("Cylinder"), FVector(88.0f, Y, Z), FVector(0.24f, 0.24f, 0.66f), FRotator(0, 0, 0), FLinearColor(0.88f, 0.54f, 0.08f));
+	}
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Elevation Block"), TEXT("Cube"), FVector(80, 0, 108), FVector(0.55f, 0.55f, 0.47f), FRotator(0, 0, 0), FLinearColor(0.19f, 0.25f, 0.23f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Long Howitzer"), TEXT("Cylinder"), FVector(175, 0, 174), FVector(0.24f, 0.24f, 1.55f), FRotator(70, 0, 0), FLinearColor(0.12f, 0.18f, 0.16f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Muzzle"), TEXT("Cylinder"), FVector(225, 0, 269), FVector(0.34f, 0.34f, 0.18f), FRotator(70, 0, 0), FLinearColor(1.0f, 0.48f, 0.05f));
 
 	// Compact tracked guard drone with a distinct head, sensor, side wheels and guns.
 	AddPart(BotModelParts, TEXT("Bot Lower Chassis"), TEXT("Cube"), FVector(0, 0, 24), FVector(1.25f, 0.74f, 0.24f), FRotator(0, 0, 0), FLinearColor(0.08f, 0.16f, 0.18f));
@@ -149,7 +163,11 @@ void ATDDefenseDeployable::Configure(ETDDefenseType NewType)
 	DefenseType = NewType;
 	BaseMesh->SetVisibility(false, true);
 	TopMesh->SetVisibility(false, true);
-	for (UStaticMeshComponent* Part : TurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::Turret, true); }
+	const bool bIsTurret = IsTurret();
+	for (UStaticMeshComponent* Part : TurretModelParts) { Part->SetVisibility(bIsTurret, true); }
+	for (UStaticMeshComponent* Part : HeavyTurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::HeavyTurret, true); }
+	for (UStaticMeshComponent* Part : MineTurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::MineTurret, true); }
+	for (UStaticMeshComponent* Part : ArtilleryTurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::ArtilleryTurret, true); }
 	for (UStaticMeshComponent* Part : BotModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::GuardBot, true); }
 	for (UStaticMeshComponent* Part : WireModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::BarbedWire, true); }
 	switch (DefenseType)
@@ -172,9 +190,36 @@ void ATDDefenseDeployable::Configure(ETDDefenseType NewType)
 		TopMesh->SetRelativeLocation(FVector(0, 0, 0.75f));
 		TopMesh->SetRelativeScale3D(FVector(0.35f, 2.0f, 0.2f));
 		break;
+	case ETDDefenseType::HeavyTurret:
+		AttackInterval = 2.8f;
+		AttackRadius = 2050.0f;
+		AttackDamage = 118.0f;
+		BaseMesh->SetRelativeLocation(FVector(0, 0, 48));
+		BaseMesh->SetRelativeScale3D(FVector(0.62f, 0.62f, 0.52f));
+		TopMesh->SetRelativeLocation(FVector(0, 0, 1.05f));
+		TopMesh->SetRelativeScale3D(FVector(0.68f, 0.68f, 0.42f));
+		break;
+	case ETDDefenseType::MineTurret:
+		AttackInterval = 5.0f;
+		AttackRadius = 6600.0f;
+		AttackDamage = 115.0f;
+		BaseMesh->SetRelativeLocation(FVector(0, 0, 48));
+		BaseMesh->SetRelativeScale3D(FVector(0.55f, 0.55f, 0.48f));
+		TopMesh->SetRelativeLocation(FVector(0, 0, 1.05f));
+		TopMesh->SetRelativeScale3D(FVector(0.6f, 0.6f, 0.35f));
+		break;
+	case ETDDefenseType::ArtilleryTurret:
+		AttackInterval = 7.2f;
+		AttackRadius = 24000.0f;
+		AttackDamage = 165.0f;
+		BaseMesh->SetRelativeLocation(FVector(0, 0, 48));
+		BaseMesh->SetRelativeScale3D(FVector(0.72f, 0.72f, 0.58f));
+		TopMesh->SetRelativeLocation(FVector(0, 0, 1.05f));
+		TopMesh->SetRelativeScale3D(FVector(0.7f, 0.7f, 0.40f));
+		break;
 	default:
 		AttackInterval = 0.75f;
-		AttackRadius = 2000.0f;
+		AttackRadius = 2600.0f;
 		AttackDamage = 30.0f;
 		BaseMesh->SetRelativeLocation(FVector(0, 0, 48));
 		BaseMesh->SetRelativeScale3D(FVector(0.55f, 0.55f, 0.48f));
@@ -257,6 +302,42 @@ void ATDDefenseDeployable::AttackNearestZombie()
 	{
 		const FVector Direction = Target->GetActorLocation() - GetActorLocation();
 		SetActorRotation(FRotator(0.0f, Direction.Rotation().Yaw, 0.0f));
-		Target->TakeDamage(AttackDamage, FDamageEvent(), nullptr, this);
+		if (DefenseType == ETDDefenseType::MineTurret)
+		{
+			BurstTargetLocation = Target->GetActorLocation();
+			BurstShotsRemaining = 3;
+			FireMineBurstShot();
+		}
+		else if (DefenseType == ETDDefenseType::ArtilleryTurret)
+		{
+			FActorSpawnParameters Params;
+			Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+			if (ATDDefenseProjectile* Shell = GetWorld()->SpawnActor<ATDDefenseProjectile>(ATDDefenseProjectile::StaticClass(), GetActorLocation() + FVector(0, 0, 240), FRotator::ZeroRotator, Params))
+			{
+				Shell->Configure(GetActorLocation() + FVector(0, 0, 240), Target->GetActorLocation(), 2.1f, 2100.0f, AttackDamage, 620.0f, false);
+			}
+		}
+		else
+		{
+			Target->TakeDamage(AttackDamage, FDamageEvent(), nullptr, this);
+		}
+	}
+}
+
+void ATDDefenseDeployable::FireMineBurstShot()
+{
+	if (!GetWorld() || BurstShotsRemaining <= 0) return;
+	FActorSpawnParameters Params;
+	Params.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	const FVector Scatter(FMath::FRandRange(-440.0f, 440.0f), FMath::FRandRange(-440.0f, 440.0f), 0.0f);
+	const FVector Landing = BurstTargetLocation + Scatter;
+	if (ATDDefenseProjectile* Mine = GetWorld()->SpawnActor<ATDDefenseProjectile>(ATDDefenseProjectile::StaticClass(), GetActorLocation() + FVector(0, 0, 170), FRotator::ZeroRotator, Params))
+	{
+		Mine->Configure(GetActorLocation() + FVector(0, 0, 170), Landing, FMath::FRandRange(1.0f, 1.45f), 520.0f, AttackDamage, 430.0f, true);
+	}
+	--BurstShotsRemaining;
+	if (BurstShotsRemaining > 0)
+	{
+		GetWorld()->GetTimerManager().SetTimer(BurstTimer, this, &ATDDefenseDeployable::FireMineBurstShot, 0.22f, false);
 	}
 }

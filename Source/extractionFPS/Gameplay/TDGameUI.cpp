@@ -35,6 +35,7 @@ namespace TDUIStyle
 void UTDGameUI::ShowMainMenu() { CurrentPage = EPage::Main; BuildPage(); }
 void UTDGameUI::ShowHelp() { CurrentPage = EPage::Help; BuildPage(); }
 void UTDGameUI::ShowCommandMenu() { CurrentPage = EPage::Command; BuildPage(); }
+void UTDGameUI::ShowTurretShop() { CurrentPage = EPage::TurretShop; BuildPage(); }
 void UTDGameUI::ShowPauseMenu() { CurrentPage = EPage::Pause; BuildPage(); }
 void UTDGameUI::ShowAirstrikeTargetMenu() { CurrentPage = EPage::Airstrike; BuildPage(); }
 void UTDGameUI::ShowHUD() { CurrentPage = EPage::HUD; BuildPage(); RefreshDisplay(); }
@@ -74,7 +75,10 @@ void UTDGameUI::AddCommandButton(UVerticalBox* List, int32 Number, const FString
 	Button->SetBackgroundColor(FLinearColor(0.10f, 0.19f, 0.21f, 1.0f));
 	UVerticalBox* Content = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass());
 	UTextBlock* Heading = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-	Heading->SetText(FText::FromString(FString::Printf(TEXT("%d   %s     %s credits"), Number, *Name, *Cost)));
+	const FString HeadingText = Number <= 7
+		? FString::Printf(TEXT("%d   %s     %s credits"), Number, *Name, *Cost)
+		: FString::Printf(TEXT("%s     %s credits"), *Name, *Cost);
+	Heading->SetText(FText::FromString(HeadingText));
 	Heading->SetColorAndOpacity(FSlateColor(TDUIStyle::Yellow));
 	Heading->SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 15));
 	Content->AddChildToVerticalBox(Heading);
@@ -95,6 +99,10 @@ void UTDGameUI::AddCommandButton(UVerticalBox* List, int32 Number, const FString
 	case 5: Button->OnClicked.AddDynamic(this, &UTDGameUI::Action5Clicked); break;
 	case 6: Button->OnClicked.AddDynamic(this, &UTDGameUI::Action6Clicked); break;
 	case 7: Button->OnClicked.AddDynamic(this, &UTDGameUI::Action7Clicked); break;
+	case 8: Button->OnClicked.AddDynamic(this, &UTDGameUI::TurretMediumClicked); break;
+	case 9: Button->OnClicked.AddDynamic(this, &UTDGameUI::TurretHeavyClicked); break;
+	case 10: Button->OnClicked.AddDynamic(this, &UTDGameUI::TurretMineClicked); break;
+	case 11: Button->OnClicked.AddDynamic(this, &UTDGameUI::TurretArtilleryClicked); break;
 	default: break;
 	}
 }
@@ -160,7 +168,7 @@ void UTDGameUI::BuildPage()
 		StatusText->SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 14));
 		BottomContent->AddChildToVerticalBox(StatusText);
 		ControlHintText = AddLabel(BottomContent, TEXT("WASD / ARROWS  CHOOSE ROAD FROM OUTPOST     •     SPACE / HOME  RETURN TO OUTPOST     •     B  COMMANDS     •     ESC  PAUSE"), 12, TDUIStyle::Muted);
-		for (int32 ArrowIndex = 0; ArrowIndex < 6; ++ArrowIndex)
+		for (int32 ArrowIndex = 0; ArrowIndex < 12; ++ArrowIndex)
 		{
 			UTextBlock* Arrow = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
 			Arrow->SetText(FText::FromString(TEXT("|\nV")));
@@ -190,8 +198,9 @@ void UTDGameUI::BuildPage()
 	PanelSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 	PanelSlot->SetPosition(FVector2D(0, 0));
 	const bool bWidePanel = CurrentPage == EPage::Command;
+	const bool bTurretPanel = CurrentPage == EPage::TurretShop;
 	const bool bAirstrikePanel = CurrentPage == EPage::Airstrike;
-	PanelSlot->SetSize(FVector2D(bWidePanel ? 680.0f : 560.0f, bWidePanel ? 680.0f : (bAirstrikePanel ? 430.0f : 560.0f)));
+	PanelSlot->SetSize(FVector2D(bWidePanel ? 680.0f : 560.0f, bWidePanel ? 680.0f : ((bAirstrikePanel || bTurretPanel) ? 500.0f : 560.0f)));
 	Panel->SetPadding(FMargin(24.0f));
 	UVerticalBox* Content = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass());
 	Panel->AddChild(Content);
@@ -213,7 +222,7 @@ void UTDGameUI::BuildPage()
 		AddLabel(Content, TEXT("THE MISSION"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("Survive five zombie waves. Defenses fire automatically. When the final wave falls, reach the helicopter beyond the city exit."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("COMMANDS"), 15, TDUIStyle::Cyan, true);
-		AddLabel(Content, TEXT("B opens the build and upgrade menu. Choose an action there, or use keys 1–7 for a quick action. Select Turret, then click a yellow arrow above a free rooftop pad. For an Eagle Airstrike, press 5 and choose West, East or South. The strike covers the full lane for 250 damage and costs 240 credits."), 15, FLinearColor::White);
+		AddLabel(Content, TEXT("B opens the build menu. Press 1 or choose Turret Types, select one of four towers, then click a yellow arrow above a free rooftop pad. Towers aim and reload automatically. Keys 2–7 still buy a bot, wire, repair, airstrike, turret upgrade and wall upgrade."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("CAMERA VIEWS"), 15, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("Use WASD or the arrow keys to fly along one of four straight camera lines. Every camera view points at the outpost. Press Space or Home to return above it before choosing a different road. The camera cannot stop between the five fixed views."), 15, FLinearColor::White);
 		AddLabel(Content, TEXT("Earn 10 credits for each zombie defeated. Spend credits between waves to prepare."), 14, TDUIStyle::Muted);
@@ -224,7 +233,7 @@ void UTDGameUI::BuildPage()
 	{
 		AddLabel(Content, TEXT("OUTPOST COMMAND"), 26, TDUIStyle::Yellow, true);
 		AddLabel(Content, TEXT("Choose a defense or upgrade. The game pauses while this panel is open."), 13, TDUIStyle::Muted);
-		AddCommandButton(Content, 1, TEXT("ROOFTOP TURRET"), TEXT("60"), TEXT("Choose where it goes: click a yellow arrow above any free rooftop pad. Credits are charged after placement."));
+		AddCommandButton(Content, 1, TEXT("CHOOSE TURRET TYPE"), TEXT("60–210"), TEXT("Pick a turret, then place it on a free rooftop pad. You only pay after choosing a spot."));
 		AddCommandButton(Content, 2, TEXT("GUARD BOT"), TEXT("90"), TEXT("Mobile support that attacks zombies around the outpost."));
 		AddCommandButton(Content, 3, TEXT("BARBED WIRE"), TEXT("35"), TEXT("Slows and damages zombies approaching the walls."));
 		AddCommandButton(Content, 4, TEXT("REPAIR OUTPOST"), TEXT("40"), TEXT("Restore up to 300 integrity."));
@@ -232,6 +241,17 @@ void UTDGameUI::BuildPage()
 		AddCommandButton(Content, 6, TEXT("UPGRADE TURRET"), TEXT("50+"), TEXT("Improve the nearest turret. Each level costs more."));
 		AddCommandButton(Content, 7, TEXT("REINFORCE WALLS"), TEXT("80"), TEXT("Reduce damage to the outpost. Up to three upgrades."));
 		UButton* Close = AddButton(Content, TEXT("CLOSE  /  RESUME"), TDUIStyle::Cyan);
+		if (Close) Close->OnClicked.AddDynamic(this, &UTDGameUI::ResumeClicked);
+	}
+	else if (CurrentPage == EPage::TurretShop)
+	{
+		AddLabel(Content, TEXT("ROOFTOP TURRETS"), 28, TDUIStyle::Yellow, true);
+		AddLabel(Content, TEXT("Choose a tower. It will fire and reload by itself. Then click one of the yellow rooftop arrows."), 14, TDUIStyle::Muted);
+		AddCommandButton(Content, 8, TEXT("MEDIUM AMMO TURRET"), TEXT("60"), TEXT("Fast automatic fire • medium damage • longest direct-fire range."));
+		AddCommandButton(Content, 9, TEXT("HEAVY CANNON"), TEXT("125"), TEXT("Heavy rounds • high damage • fires about 3.7× slower than the medium turret."));
+		AddCommandButton(Content, 10, TEXT("MINE LAUNCHER"), TEXT("160"), TEXT("Three mines per burst • mines arm after 1 second • strong splash damage • long range."));
+		AddCommandButton(Content, 11, TEXT("HE ARTILLERY"), TEXT("210"), TEXT("Very slow high-arc shells • large blast • can target zombies anywhere on the map."));
+		UButton* Close = AddButton(Content, TEXT("CANCEL  /  BACK TO GAME"), TDUIStyle::Cyan);
 		if (Close) Close->OnClicked.AddDynamic(this, &UTDGameUI::ResumeClicked);
 	}
 	else if (CurrentPage == EPage::Pause)
@@ -346,6 +366,10 @@ void UTDGameUI::Action4Clicked() { DoAction(4); }
 void UTDGameUI::Action5Clicked() { DoAction(5); }
 void UTDGameUI::Action6Clicked() { DoAction(6); }
 void UTDGameUI::Action7Clicked() { DoAction(7); }
+void UTDGameUI::TurretMediumClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->BeginTurretPlacement(ETDDefenseType::Turret); }
+void UTDGameUI::TurretHeavyClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->BeginTurretPlacement(ETDDefenseType::HeavyTurret); }
+void UTDGameUI::TurretMineClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->BeginTurretPlacement(ETDDefenseType::MineTurret); }
+void UTDGameUI::TurretArtilleryClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->BeginTurretPlacement(ETDDefenseType::ArtilleryTurret); }
 void UTDGameUI::AirstrikeWestClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->ConfirmAirstrikeTarget(0); }
 void UTDGameUI::AirstrikeEastClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->ConfirmAirstrikeTarget(1); }
 void UTDGameUI::AirstrikeSouthClicked() { if (AShooterPlayerController* PC = Cast<AShooterPlayerController>(GetOwningPlayer())) PC->ConfirmAirstrikeTarget(2); }

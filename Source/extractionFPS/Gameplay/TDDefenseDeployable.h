@@ -21,13 +21,14 @@ public:
 	ATDDefenseDeployable();
 	void Configure(ETDDefenseType NewType);
 	bool Upgrade();
-	bool IsTurret() const { return DefenseType == ETDDefenseType::Turret; }
+	bool IsTurret() const { return DefenseType == ETDDefenseType::Turret || DefenseType == ETDDefenseType::HeavyTurret || DefenseType == ETDDefenseType::MineTurret || DefenseType == ETDDefenseType::ArtilleryTurret; }
 	int32 GetUpgradeLevel() const { return UpgradeLevel; }
-	bool CanUpgrade() const { return DefenseType == ETDDefenseType::Turret && UpgradeLevel < 3; }
+	bool CanUpgrade() const { return IsTurret() && UpgradeLevel < 3; }
 
 protected:
 	void AttackNearestZombie();
 	void ScheduleAttackTimer();
+	void FireMineBurstShot();
 
 private:
 	UPROPERTY(VisibleAnywhere)
@@ -47,9 +48,18 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category="Defense|Model")
 	TArray<TObjectPtr<UStaticMeshComponent>> WireModelParts;
+	UPROPERTY(VisibleAnywhere, Category="Defense|Model")
+	TArray<TObjectPtr<UStaticMeshComponent>> HeavyTurretModelParts;
+	UPROPERTY(VisibleAnywhere, Category="Defense|Model")
+	TArray<TObjectPtr<UStaticMeshComponent>> MineTurretModelParts;
+	UPROPERTY(VisibleAnywhere, Category="Defense|Model")
+	TArray<TObjectPtr<UStaticMeshComponent>> ArtilleryTurretModelParts;
 
 	ETDDefenseType DefenseType = ETDDefenseType::Turret;
 	FTimerHandle AttackTimer;
+	FTimerHandle BurstTimer;
+	int32 BurstShotsRemaining = 0;
+	FVector BurstTargetLocation = FVector::ZeroVector;
 	float AttackInterval = 0.75f;
 	float AttackRadius = 2000.0f;
 	float AttackDamage = 30.0f;

@@ -376,6 +376,24 @@ def main():
     for side, x in (("west", -compound_half - wall_thickness / 2.0 - 2.0), ("east", compound_half + wall_thickness / 2.0 + 2.0)):
         box(cube, "Outpost / amber side wall band " + side, x, 0.0, band_z, 8.0, compound_half * 2.0, 36.0, build_pad_mark)
 
+    # Repeated inset armor plates, hazard marks and service labels give the
+    # outpost a finished, readable silhouette from the fixed gameplay cameras.
+    # They sit flush inside the solid wall face, so they do not create cover.
+    for index, x in enumerate((-1050.0, -420.0, 420.0, 1050.0)):
+        box(cube, "Outpost / south armor plate %02d" % index, x, -1884.0, 360.0, 430.0, 28.0, 330.0, interior)
+        box(cube, "Outpost / south hazard mark %02d" % index, x, -1866.0, 360.0, 230.0, 8.0, 28.0, build_pad_mark)
+    for side, x in (("west", -1884.0), ("east", 1884.0)):
+        for index, y in enumerate((-1050.0, -420.0, 420.0, 1050.0)):
+            box(cube, "Outpost / %s armor plate %02d" % (side, index), x, y, 360.0, 28.0, 430.0, 330.0, interior)
+            box(cube, "Outpost / %s hazard mark %02d" % (side, index), x + (4.0 if side == "west" else -4.0), y, 360.0, 8.0, 230.0, 28.0, build_pad_mark)
+
+    # A bright three-part command crest marks the fortified junction without
+    # filling its open courtyard or adding a roof over the firing walk.
+    box(cube, "Outpost / command crest plate", 0.0, -1882.0, 480.0, 620.0, 24.0, 220.0, cover_mat)
+    box(cube, "Outpost / command crest center", 0.0, -1866.0, 480.0, 230.0, 8.0, 120.0, build_pad_mark)
+    for x in (-205.0, 205.0):
+        box(cube, "Outpost / command crest bars", x, -1866.0, 480.0, 24.0, 8.0, 120.0, road_mark)
+
     # A connected firing walk reaches the three road-facing walls. The rear
     # section joins the ring to keep the walk connected but has no firing merlons.
     walk_thickness = 80.0

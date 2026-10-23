@@ -179,14 +179,20 @@ bool AextractionFPSGameMode::UpgradeOutpostWalls()
 
 bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector& Location, const FRotator& Rotation)
 {
-	const int32 Cost = Type == ETDDefenseType::Turret ? 60 : (Type == ETDDefenseType::GuardBot ? 90 : 35);
+	const int32 Cost = Type == ETDDefenseType::Turret ? 60
+		: Type == ETDDefenseType::HeavyTurret ? 125
+		: Type == ETDDefenseType::MineTurret ? 160
+		: Type == ETDDefenseType::ArtilleryTurret ? 210
+		: Type == ETDDefenseType::GuardBot ? 90 : 35;
 	if (Credits < Cost || !GetWorld())
 	{
 		ShowDefenseStatus(Credits < Cost ? TEXT("Not enough credits") : TEXT("Cannot place defense"), FColor::Red);
 		return false;
 	}
 	FVector DeploymentLocation = Location;
-	if (Type == ETDDefenseType::Turret)
+	const bool bIsTurret = Type == ETDDefenseType::Turret || Type == ETDDefenseType::HeavyTurret
+		|| Type == ETDDefenseType::MineTurret || Type == ETDDefenseType::ArtilleryTurret;
+	if (bIsTurret)
 	{
 		const TArray<FVector> AvailableSlots = GetAvailableTurretSlots();
 		float NearestDistanceSquared = TNumericLimits<float>::Max();
@@ -215,11 +221,22 @@ bool AextractionFPSGameMode::PurchaseDefense(ETDDefenseType Type, const FVector&
 	}
 	Defense->Configure(Type);
 	Credits -= Cost;
-	const TCHAR* DefenseName = Type == ETDDefenseType::Turret
-		? TEXT("TURRET")
-		: (Type == ETDDefenseType::GuardBot ? TEXT("GUARD BOT") : TEXT("BARBED WIRE"));
+	const TCHAR* DefenseName = Type == ETDDefenseType::Turret ? TEXT("MEDIUM TURRET")
+		: Type == ETDDefenseType::HeavyTurret ? TEXT("HEAVY CANNON")
+		: Type == ETDDefenseType::MineTurret ? TEXT("MINE LAUNCHER")
+		: Type == ETDDefenseType::ArtilleryTurret ? TEXT("HE ARTILLERY")
+		: Type == ETDDefenseType::GuardBot ? TEXT("GUARD BOT") : TEXT("BARBED WIRE");
 	ShowDefenseStatus(FString::Printf(TEXT("%s deployed | -%d credits | %d left"), DefenseName, Cost, Credits), FColor(120, 255, 80));
 	return true;
+}
+
+bool AextractionFPSGameMode::CanAffordTurret(ETDDefenseType Type) const
+{
+	const int32 Cost = Type == ETDDefenseType::Turret ? 60
+		: Type == ETDDefenseType::HeavyTurret ? 125
+		: Type == ETDDefenseType::MineTurret ? 160
+		: Type == ETDDefenseType::ArtilleryTurret ? 210 : MAX_int32;
+	return Credits >= Cost;
 }
 
 TArray<FVector> AextractionFPSGameMode::GetAvailableTurretSlots() const
