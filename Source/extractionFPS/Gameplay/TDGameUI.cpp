@@ -138,7 +138,7 @@ void UTDGameUI::BuildPage()
 		UVerticalBox* Top = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass());
 		TopPanel->AddChild(Top);
 		UTextBlock* Title = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass());
-		Title->SetText(FText::FromString(TEXT("LAST OUTPOST     /     MORROW DISTRICT")));
+		Title->SetText(FText::FromString(TEXT("OUTPOST YELLOW     /     MORROW DISTRICT")));
 		Title->SetColorAndOpacity(FSlateColor(TDUIStyle::Yellow));
 		Title->SetFont(FCoreStyle::GetDefaultFontStyle(TEXT("Bold"), 14));
 		Top->AddChildToVerticalBox(Title);
@@ -213,7 +213,7 @@ void UTDGameUI::BuildPage()
 
 	if (CurrentPage == EPage::Main)
 	{
-		AddLabel(Content, TEXT("LAST OUTPOST"), 36, TDUIStyle::Yellow, true);
+		AddLabel(Content, TEXT("OUTPOST YELLOW"), 36, TDUIStyle::Yellow, true);
 		AddLabel(Content, TEXT("MORROW DISTRICT  /  DEFENSE COMMAND"), 13, TDUIStyle::Cyan, true);
 		AddLabel(Content, TEXT("Five waves stand between the outpost and extraction. Build rooftop defenses, reinforce the walls, and hold until the helicopter can land."), 16, FLinearColor::White);
 		UButton* Start = AddButton(Content, TEXT("START DEFENSE"), TDUIStyle::Yellow);
