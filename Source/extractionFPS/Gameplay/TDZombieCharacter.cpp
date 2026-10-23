@@ -7,6 +7,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Animation/AnimBlueprintGeneratedClass.h"
+#include "Animation/AnimSequence.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "AIController.h"
 #include "Materials/MaterialInstanceDynamic.h"
@@ -82,8 +83,33 @@ ATDZombieCharacter::ATDZombieCharacter()
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> SphereMesh(TEXT("/Engine/BasicShapes/Sphere.Sphere"));
 	static ConstructorHelpers::FObjectFinder<UMaterialInterface> ShapeMaterial(
 		TEXT("/Engine/BasicShapes/BasicShapeMaterial.BasicShapeMaterial"));
-	static ConstructorHelpers::FObjectFinder<UMaterialInterface> ZombieMaterial(
-		TEXT("/Game/Maps/Materials/M_Zombie_StylizedYellow_Runtime.M_Zombie_StylizedYellow_Runtime"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> BasicZombie(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_Basic.Zombie_Basic"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ChubbyZombie(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_Chubby.Zombie_Chubby"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> RibcageZombie(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_Ribcage.Zombie_Ribcage"));
+	static ConstructorHelpers::FObjectFinder<USkeletalMesh> ArmZombie(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_Arm.Zombie_Arm"));
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> BasicWalk(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_BasicCharacterArmature_Walk.Zombie_BasicCharacterArmature_Walk"));
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> ChubbyWalk(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_ChubbyCharacterArmature_Walk.Zombie_ChubbyCharacterArmature_Walk"));
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> RibcageCrawl(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_Ribcage_Anim_CharacterArmature_Crawl.Zombie_Ribcage_Anim_CharacterArmature_Crawl"));
+	static ConstructorHelpers::FObjectFinder<UAnimSequence> ArmRun(
+		TEXT("/Game/ExternalAssets/Source/QuaterniusZombieApocalypseKit/Zombie_Arm_Anim_CharacterArmature_Run.Zombie_Arm_Anim_CharacterArmature_Run"));
+	static ConstructorHelpers::FObjectFinder<UMaterialInterface> QuaterniusYellow(
+		TEXT("/Game/Characters/Enemies/Materials/M_QuaterniusZombie_GoldenYellow.M_QuaterniusZombie_GoldenYellow"));
+	BasicZombieMesh = BasicZombie.Object;
+	ChubbyZombieMesh = ChubbyZombie.Object;
+	RibcageZombieMesh = RibcageZombie.Object;
+	ArmZombieMesh = ArmZombie.Object;
+	BasicZombieWalk = BasicWalk.Object;
+	ChubbyZombieWalk = ChubbyWalk.Object;
+	RibcageZombieCrawl = RibcageCrawl.Object;
+	ArmZombieRun = ArmRun.Object;
+	QuaterniusYellowMaterial = QuaterniusYellow.Object;
 
 	FName TorsoBone(TEXT("spine_03"));
 	if (GetMesh()->GetBoneIndex(TorsoBone) == INDEX_NONE)
@@ -188,12 +214,12 @@ ATDZombieCharacter::ATDZombieCharacter()
 			ShoulderArmor->SetMaterial(0, MakeFlatColor(ShapeMaterial.Object, this, FLinearColor(1.0f, 0.12f, 0.025f)));
 		}
 
-		// BasicShapeMaterial is static-mesh-only and silently falls back on skeletal meshes.
-		if (ZombieMaterial.Succeeded())
+		// Use one known-good skeletal material for every zombie, including the original exploder.
+		if (QuaterniusYellowMaterial)
 		{
 			for (int32 MaterialIndex = 0; MaterialIndex < GetMesh()->GetNumMaterials(); ++MaterialIndex)
 			{
-				GetMesh()->SetMaterial(MaterialIndex, ZombieMaterial.Object);
+				GetMesh()->SetMaterial(MaterialIndex, QuaterniusYellowMaterial);
 			}
 		}
 	}
@@ -245,9 +271,72 @@ void ATDZombieCharacter::SetOutpostTarget(const FVector& TargetLocation)
 	OutpostTarget = TargetLocation;
 }
 
+void ATDZombieCharacter::SetStyleAccessoriesVisible(bool bVisible)
+{
+	if (ChestHarness) { ChestHarness->SetVisibility(bVisible, true); }
+	if (ShoulderArmor) { ShoulderArmor->SetVisibility(bVisible, true); }
+	if (HazardStripe) { HazardStripe->SetVisibility(bVisible, true); }
+	if (SalvagePack) { SalvagePack->SetVisibility(bVisible, true); }
+	if (UtilityBelt) { UtilityBelt->SetVisibility(bVisible, true); }
+	if (ChestStrap) { ChestStrap->SetVisibility(bVisible, true); }
+	if (HeadLamp) { HeadLamp->SetVisibility(bVisible, true); }
+	if (WarningTag) { WarningTag->SetVisibility(bVisible, true); }
+}
+
 void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 WaveNumber)
 {
 	Archetype = NewArchetype;
+	USkeletalMesh* ArchetypeMesh = nullptr;
+	UAnimSequence* ArchetypeAnimation = nullptr;
+	if (Archetype != ETDZombieArchetype::Exploder)
+	{
+		// Use four different imported silhouettes while preserving the original
+		// explosive zombie's unique hazard gear and yellow skin.
+		switch (Archetype)
+		{
+		case ETDZombieArchetype::Crawler:
+			ArchetypeMesh = RibcageZombieMesh;
+			ArchetypeAnimation = RibcageZombieCrawl;
+			break;
+		case ETDZombieArchetype::RadioactiveRunner:
+			ArchetypeMesh = ArmZombieMesh;
+			ArchetypeAnimation = ArmZombieRun;
+			break;
+		case ETDZombieArchetype::Brute:
+			ArchetypeMesh = ChubbyZombieMesh;
+			ArchetypeAnimation = ChubbyZombieWalk;
+			break;
+		default:
+			ArchetypeMesh = BasicZombieMesh;
+			ArchetypeAnimation = BasicZombieWalk;
+			break;
+		}
+	}
+	if (ArchetypeMesh)
+	{
+		GetMesh()->SetSkeletalMesh(ArchetypeMesh);
+		GetMesh()->SetRelativeLocationAndRotation(FVector(0.0f, 0.0f, -92.0f), FRotator(0.0f, -90.0f, 0.0f));
+		GetMesh()->SetAnimInstanceClass(nullptr);
+		GetMesh()->SetAnimationMode(EAnimationMode::AnimationSingleNode);
+		if (ArchetypeAnimation)
+		{
+			GetMesh()->PlayAnimation(ArchetypeAnimation, true);
+		}
+		if (QuaterniusYellowMaterial)
+		{
+			for (int32 MaterialIndex = 0; MaterialIndex < GetMesh()->GetNumMaterials(); ++MaterialIndex)
+			{
+				GetMesh()->SetMaterial(MaterialIndex, QuaterniusYellowMaterial);
+			}
+		}
+		// The imported rigs use different bone names from the original model.
+		// Keep decorative gear on the original exploder only to avoid floating attachments.
+		SetStyleAccessoriesVisible(false);
+	}
+	else if (Archetype == ETDZombieArchetype::Exploder)
+	{
+		SetStyleAccessoriesVisible(true);
+	}
 	const float WaveHealthScale = 1.0f + FMath::Max(0, WaveNumber - 1) * 0.18f;
 	AttackInterval = 2.0f;
 	OutpostDamage = 5.0f;

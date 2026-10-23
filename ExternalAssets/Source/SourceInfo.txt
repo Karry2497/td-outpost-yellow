@@ -1,0 +1,13 @@
+Quaternius Zombie Apocalypse Kit
+Source: https://quaternius.com/packs/zombieapocalypsekit.html
+License: CC0 1.0 Universal. Official page identifies the kit as CC0 and permits personal and commercial use.
+Imported files: Zombie_Basic.fbx, Zombie_Chubby.fbx, Zombie_Ribcage.fbx, Zombie_Arm.fbx, Zombie_Atlas.png.
+
+Plewr Low Poly Turret
+Source: https://plewr.itch.io/low-poly-turret
+License: CC0 1.0 Universal, as stated by the creator on the asset page.
+The FBX was supplied by the project owner.
+
+Kenney Car Kit
+Source: https://kenney.nl/assets/car-kit
+License details are in License.txt.

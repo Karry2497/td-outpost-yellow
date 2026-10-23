@@ -7,6 +7,9 @@
 #include "TDZombieCharacter.generated.h"
 
 class UStaticMeshComponent;
+class USkeletalMesh;
+class UAnimSequence;
+class UMaterialInterface;
 
 UENUM(BlueprintType)
 enum class ETDZombieArchetype : uint8
@@ -41,6 +44,7 @@ private:
 	void AttackOutpost();
 	void ExploderFuseExpired();
 	void Die(bool bAwardCredits = true);
+	void SetStyleAccessoriesVisible(bool bVisible);
 
 	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
 	TObjectPtr<UStaticMeshComponent> ChestHarness;
@@ -65,6 +69,33 @@ private:
 
 	UPROPERTY(VisibleAnywhere, Category="Zombie|Style")
 	TObjectPtr<UStaticMeshComponent> WarningTag;
+
+	UPROPERTY()
+	TObjectPtr<USkeletalMesh> BasicZombieMesh;
+
+	UPROPERTY()
+	TObjectPtr<USkeletalMesh> ChubbyZombieMesh;
+
+	UPROPERTY()
+	TObjectPtr<USkeletalMesh> RibcageZombieMesh;
+
+	UPROPERTY()
+	TObjectPtr<USkeletalMesh> ArmZombieMesh;
+
+	UPROPERTY()
+	TObjectPtr<UAnimSequence> BasicZombieWalk;
+
+	UPROPERTY()
+	TObjectPtr<UAnimSequence> ChubbyZombieWalk;
+
+	UPROPERTY()
+	TObjectPtr<UAnimSequence> RibcageZombieCrawl;
+
+	UPROPERTY()
+	TObjectPtr<UAnimSequence> ArmZombieRun;
+
+	UPROPERTY()
+	TObjectPtr<UMaterialInterface> QuaterniusYellowMaterial;
 
 	UPROPERTY(EditAnywhere, Category="Zombie|Combat", meta=(ClampMin="1.0"))
 	float Health = 70.0f;
