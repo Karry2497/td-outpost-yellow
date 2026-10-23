@@ -32,6 +32,12 @@ namespace TDUIStyle
 	const FLinearColor Muted(0.69f, 0.81f, 0.82f, 1.0f);
 }
 
+UTDGameUI::UTDGameUI(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
+{
+	SetIsFocusable(true);
+}
+
 void UTDGameUI::ShowMainMenu() { CurrentPage = EPage::Main; BuildPage(); }
 void UTDGameUI::ShowHelp() { CurrentPage = EPage::Help; BuildPage(); }
 void UTDGameUI::ShowCommandMenu() { CurrentPage = EPage::Command; BuildPage(); }

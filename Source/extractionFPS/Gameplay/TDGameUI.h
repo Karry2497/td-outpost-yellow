@@ -16,6 +16,8 @@ class EXTRACTIONFPS_API UTDGameUI : public UUserWidget
 	GENERATED_BODY()
 
 public:
+	UTDGameUI(const FObjectInitializer& ObjectInitializer);
+
 	void ShowMainMenu();
 	void ShowHelp();
 	void ShowCommandMenu();
