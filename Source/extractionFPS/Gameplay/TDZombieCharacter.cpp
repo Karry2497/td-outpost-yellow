@@ -341,7 +341,9 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 	AttackInterval = 2.0f;
 	OutpostDamage = 5.0f;
 	ExplosionDamage = 150.0f;
-	GetMesh()->SetRelativeScale3D(FVector(1.0f));
+	// Slightly enlarge all silhouettes for better readability from the fixed overhead camera.
+	// These visual-only mesh scales do not change the character capsule, health, or damage.
+	GetMesh()->SetRelativeScale3D(FVector(1.15f));
 	if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.24f, 0.31f, 0.32f)); }
 	if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.23f, 0.39f, 0.16f)); }
 	if (ChestHarness) { ChestHarness->SetRelativeScale3D(FVector(0.31f, 0.25f, 0.28f)); }
@@ -353,7 +355,7 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 		MoveSpeed = 115.0f;
 		OutpostDamage = 2.0f;
 		AttackInterval = 2.6f;
-		GetMesh()->SetRelativeScale3D(FVector(0.72f, 0.82f, 0.58f));
+		GetMesh()->SetRelativeScale3D(FVector(0.83f, 0.94f, 0.67f));
 		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.18f, 0.25f, 0.22f)); }
 		TintComponent(ChestHarness, FLinearColor(0.24f, 0.29f, 0.08f));
 		TintComponent(WarningTag, FLinearColor(0.95f, 0.72f, 0.05f));
@@ -363,7 +365,7 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 		MoveSpeed = 485.0f;
 		OutpostDamage = 2.0f;
 		AttackInterval = 0.55f;
-		GetMesh()->SetRelativeScale3D(FVector(0.9f));
+		GetMesh()->SetRelativeScale3D(FVector(1.035f));
 		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.2f, 0.25f, 0.27f)); }
 		TintComponent(ChestHarness, FLinearColor(0.05f, 0.58f, 0.20f));
 		TintComponent(HazardStripe, FLinearColor(0.25f, 1.0f, 0.12f));
@@ -374,7 +376,7 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 		MoveSpeed = 155.0f;
 		OutpostDamage = 24.0f;
 		AttackInterval = 3.4f;
-		GetMesh()->SetRelativeScale3D(FVector(1.3f));
+		GetMesh()->SetRelativeScale3D(FVector(1.5f));
 		if (ChestHarness) { ChestHarness->SetRelativeScale3D(FVector(0.42f, 0.36f, 0.36f)); }
 		if (ShoulderArmor) { ShoulderArmor->SetRelativeScale3D(FVector(0.32f, 0.49f, 0.24f)); }
 		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.30f, 0.37f, 0.38f)); }
@@ -386,7 +388,7 @@ void ATDZombieCharacter::SetArchetype(ETDZombieArchetype NewArchetype, int32 Wav
 		Health = 68.0f * WaveHealthScale;
 		MoveSpeed = 440.0f;
 		OutpostDamage = 0.0f;
-		GetMesh()->SetRelativeScale3D(FVector(0.94f));
+		GetMesh()->SetRelativeScale3D(FVector(1.08f));
 		if (SalvagePack) { SalvagePack->SetRelativeScale3D(FVector(0.30f, 0.32f, 0.36f)); }
 		TintComponent(ChestHarness, FLinearColor(0.88f, 0.12f, 0.035f));
 		TintComponent(WarningTag, FLinearColor(1.0f, 0.13f, 0.025f));
