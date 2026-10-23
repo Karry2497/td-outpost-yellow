@@ -107,19 +107,44 @@ ATDDefenseDeployable::ATDDefenseDeployable()
 	AddPart(TurretModelParts, TEXT("Turret Muzzle Right"), TEXT("Cylinder"), FVector(196, 27, 91), FVector(0.19f, 0.19f, 0.14f), FRotator(90, 0, 0), FLinearColor(1.0f, 0.55f, 0.08f));
 	AddPart(TurretModelParts, TEXT("Turret Optic"), TEXT("Sphere"), FVector(36, 0, 154), FVector(0.19f, 0.19f, 0.19f), FRotator(0, 0, 0), FLinearColor(0.12f, 1.0f, 0.78f));
 	AddPart(TurretModelParts, TEXT("Turret Antenna"), TEXT("Cylinder"), FVector(-58, 52, 161), FVector(0.035f, 0.035f, 0.32f), FRotator(0, 0, 0), FLinearColor(0.84f, 0.90f, 0.82f));
-	// Each purchased tower keeps the shared readable base but gains a silhouette cue.
-	AddPart(HeavyTurretModelParts, TEXT("Heavy Reinforced Breech"), TEXT("Cube"), FVector(105, 0, 92), FVector(0.50f, 0.56f, 0.49f), FRotator(0, 0, 0), FLinearColor(0.18f, 0.22f, 0.24f));
-	AddPart(HeavyTurretModelParts, TEXT("Heavy Cannon Barrel"), TEXT("Cylinder"), FVector(215, 0, 92), FVector(0.30f, 0.30f, 1.10f), FRotator(90, 0, 0), FLinearColor(0.11f, 0.14f, 0.16f));
-	AddPart(HeavyTurretModelParts, TEXT("Heavy Muzzle Band"), TEXT("Cylinder"), FVector(315, 0, 92), FVector(0.37f, 0.37f, 0.16f), FRotator(90, 0, 0), FLinearColor(1.0f, 0.55f, 0.08f));
+	// The purchased variants use complete silhouettes, not just attachments on
+	// the twin-barrel medium turret, so each reads differently from the high camera.
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Footplate"), TEXT("Cube"), FVector(0, 0, 18), FVector(1.85f, 1.56f, 0.26f), FRotator(0, 0, 0), FLinearColor(0.08f, 0.12f, 0.14f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Bearing"), TEXT("Cylinder"), FVector(0, 0, 46), FVector(1.28f, 1.28f, 0.25f), FRotator(0, 0, 0), FLinearColor(0.22f, 0.27f, 0.28f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Armored Hull"), TEXT("Cube"), FVector(-8, 0, 91), FVector(1.17f, 0.94f, 0.62f), FRotator(0, 0, 0), FLinearColor(0.18f, 0.24f, 0.26f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Left Armor Slab"), TEXT("Cube"), FVector(-4, -94, 92), FVector(0.78f, 0.13f, 0.49f), FRotator(0, 0, -5), FLinearColor(0.10f, 0.15f, 0.17f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Right Armor Slab"), TEXT("Cube"), FVector(-4, 94, 92), FVector(0.78f, 0.13f, 0.49f), FRotator(0, 0, 5), FLinearColor(0.10f, 0.15f, 0.17f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Cannon Breech"), TEXT("Cube"), FVector(76, 0, 103), FVector(0.55f, 0.62f, 0.51f), FRotator(0, 0, 0), FLinearColor(0.30f, 0.36f, 0.36f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Cannon Barrel"), TEXT("Cylinder"), FVector(183, 0, 104), FVector(0.31f, 0.31f, 1.25f), FRotator(90, 0, 0), FLinearColor(0.07f, 0.10f, 0.12f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Muzzle Band"), TEXT("Cylinder"), FVector(285, 0, 104), FVector(0.40f, 0.40f, 0.16f), FRotator(90, 0, 0), FLinearColor(1.0f, 0.55f, 0.08f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Ammunition Crate"), TEXT("Cube"), FVector(-92, 0, 75), FVector(0.44f, 0.53f, 0.37f), FRotator(0, 0, 0), FLinearColor(0.68f, 0.42f, 0.10f));
+	AddPart(HeavyTurretModelParts, TEXT("Heavy Hull Stripe"), TEXT("Cube"), FVector(-8, 0, 154), FVector(0.72f, 0.14f, 0.08f), FRotator(0, 0, 0), FLinearColor(1.0f, 0.58f, 0.08f));
+
+	AddPart(MineTurretModelParts, TEXT("Mine Launcher Footplate"), TEXT("Cube"), FVector(0, 0, 18), FVector(1.70f, 1.54f, 0.24f), FRotator(0, 0, 0), FLinearColor(0.10f, 0.16f, 0.14f));
+	AddPart(MineTurretModelParts, TEXT("Mine Launcher Bearing"), TEXT("Cylinder"), FVector(0, 0, 44), FVector(1.15f, 1.15f, 0.25f), FRotator(0, 0, 0), FLinearColor(0.26f, 0.31f, 0.22f));
+	AddPart(MineTurretModelParts, TEXT("Mine Launcher Chassis"), TEXT("Cube"), FVector(-12, 0, 75), FVector(0.94f, 0.90f, 0.42f), FRotator(0, 0, 0), FLinearColor(0.19f, 0.28f, 0.20f));
+	AddPart(MineTurretModelParts, TEXT("Mine Rack Left Rail"), TEXT("Cube"), FVector(94, -58, 122), FVector(0.72f, 0.08f, 0.61f), FRotator(0, 0, 0), FLinearColor(0.88f, 0.52f, 0.08f));
+	AddPart(MineTurretModelParts, TEXT("Mine Rack Right Rail"), TEXT("Cube"), FVector(94, 58, 122), FVector(0.72f, 0.08f, 0.61f), FRotator(0, 0, 0), FLinearColor(0.88f, 0.52f, 0.08f));
 	for (int32 Tube = 0; Tube < 4; ++Tube)
 	{
 		const float Y = (Tube % 2 == 0 ? -1.0f : 1.0f) * 39.0f;
-		const float Z = 112.0f + (Tube < 2 ? 0.0f : 42.0f);
-		AddPart(MineTurretModelParts, *FString::Printf(TEXT("Mine Launch Tube %d"), Tube), TEXT("Cylinder"), FVector(88.0f, Y, Z), FVector(0.24f, 0.24f, 0.66f), FRotator(0, 0, 0), FLinearColor(0.88f, 0.54f, 0.08f));
+		const float Z = 100.0f + (Tube / 2) * 44.0f;
+		AddPart(MineTurretModelParts, *FString::Printf(TEXT("Mine Launch Tube %d"), Tube), TEXT("Cylinder"), FVector(106.0f, Y, Z), FVector(0.22f, 0.22f, 0.62f), FRotator(90, 0, 0), FLinearColor(0.90f, 0.58f, 0.10f));
 	}
-	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Elevation Block"), TEXT("Cube"), FVector(80, 0, 108), FVector(0.55f, 0.55f, 0.47f), FRotator(0, 0, 0), FLinearColor(0.19f, 0.25f, 0.23f));
-	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Long Howitzer"), TEXT("Cylinder"), FVector(175, 0, 174), FVector(0.24f, 0.24f, 1.55f), FRotator(70, 0, 0), FLinearColor(0.12f, 0.18f, 0.16f));
-	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Muzzle"), TEXT("Cylinder"), FVector(225, 0, 269), FVector(0.34f, 0.34f, 0.18f), FRotator(70, 0, 0), FLinearColor(1.0f, 0.48f, 0.05f));
+	AddPart(MineTurretModelParts, TEXT("Mine Rack Armor Plate"), TEXT("Cube"), FVector(-42, 0, 122), FVector(0.44f, 0.83f, 0.10f), FRotator(0, 0, 0), FLinearColor(0.91f, 0.56f, 0.09f));
+	AddPart(MineTurretModelParts, TEXT("Mine Rack Warning Lamp"), TEXT("Sphere"), FVector(20, 0, 135), FVector(0.14f, 0.14f, 0.14f), FRotator(0, 0, 0), FLinearColor(1.0f, 0.78f, 0.14f));
+
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Base Plate"), TEXT("Cube"), FVector(0, 0, 18), FVector(1.82f, 1.58f, 0.25f), FRotator(0, 0, 0), FLinearColor(0.08f, 0.13f, 0.12f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Turntable"), TEXT("Cylinder"), FVector(0, 0, 47), FVector(1.32f, 1.32f, 0.28f), FRotator(0, 0, 0), FLinearColor(0.18f, 0.26f, 0.23f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Chassis"), TEXT("Cube"), FVector(-18, 0, 88), FVector(1.18f, 0.92f, 0.48f), FRotator(0, 0, 0), FLinearColor(0.18f, 0.27f, 0.23f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Left Track"), TEXT("Cube"), FVector(-8, -98, 58), FVector(1.27f, 0.18f, 0.30f), FRotator(0, 0, 0), FLinearColor(0.07f, 0.09f, 0.09f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Right Track"), TEXT("Cube"), FVector(-8, 98, 58), FVector(1.27f, 0.18f, 0.30f), FRotator(0, 0, 0), FLinearColor(0.07f, 0.09f, 0.09f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Elevation Block"), TEXT("Cube"), FVector(64, 0, 108), FVector(0.55f, 0.55f, 0.47f), FRotator(0, 0, 0), FLinearColor(0.29f, 0.37f, 0.30f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Breech"), TEXT("Cube"), FVector(112, 0, 149), FVector(0.58f, 0.52f, 0.53f), FRotator(0, 0, 0), FLinearColor(0.23f, 0.32f, 0.26f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Long Howitzer"), TEXT("Cylinder"), FVector(174, 0, 198), FVector(0.24f, 0.24f, 1.46f), FRotator(57, 0, 0), FLinearColor(0.09f, 0.15f, 0.12f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Muzzle"), TEXT("Cylinder"), FVector(239, 0, 270), FVector(0.35f, 0.35f, 0.18f), FRotator(57, 0, 0), FLinearColor(1.0f, 0.48f, 0.05f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Shell Rack"), TEXT("Cube"), FVector(-107, 0, 95), FVector(0.45f, 0.70f, 0.40f), FRotator(0, 0, 0), FLinearColor(0.67f, 0.43f, 0.09f));
+	AddPart(ArtilleryTurretModelParts, TEXT("Artillery Range Finder"), TEXT("Sphere"), FVector(-16, 0, 152), FVector(0.17f, 0.17f, 0.17f), FRotator(0, 0, 0), FLinearColor(0.16f, 1.0f, 0.78f));
 
 	// Compact tracked guard drone with a distinct head, sensor, side wheels and guns.
 	AddPart(BotModelParts, TEXT("Bot Lower Chassis"), TEXT("Cube"), FVector(0, 0, 24), FVector(1.25f, 0.74f, 0.24f), FRotator(0, 0, 0), FLinearColor(0.08f, 0.16f, 0.18f));
@@ -164,7 +189,7 @@ void ATDDefenseDeployable::Configure(ETDDefenseType NewType)
 	BaseMesh->SetVisibility(false, true);
 	TopMesh->SetVisibility(false, true);
 	const bool bIsTurret = IsTurret();
-	for (UStaticMeshComponent* Part : TurretModelParts) { Part->SetVisibility(bIsTurret, true); }
+	for (UStaticMeshComponent* Part : TurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::Turret, true); }
 	for (UStaticMeshComponent* Part : HeavyTurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::HeavyTurret, true); }
 	for (UStaticMeshComponent* Part : MineTurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::MineTurret, true); }
 	for (UStaticMeshComponent* Part : ArtilleryTurretModelParts) { Part->SetVisibility(DefenseType == ETDDefenseType::ArtilleryTurret, true); }
@@ -241,12 +266,23 @@ bool ATDDefenseDeployable::Upgrade()
 	AttackInterval = FMath::Max(0.28f, AttackInterval * 0.88f);
 	AttackRadius *= 1.10f;
 	ScheduleAttackTimer();
-	if (TurretModelParts.IsValidIndex(5))
+	UStaticMeshComponent* UpgradeMarker = nullptr;
+	if (DefenseType == ETDDefenseType::Turret && TurretModelParts.IsValidIndex(5)) UpgradeMarker = TurretModelParts[5];
+	else if (DefenseType == ETDDefenseType::HeavyTurret && HeavyTurretModelParts.IsValidIndex(9)) UpgradeMarker = HeavyTurretModelParts[9];
+	else if (DefenseType == ETDDefenseType::MineTurret && MineTurretModelParts.IsValidIndex(10)) UpgradeMarker = MineTurretModelParts[10];
+	else if (DefenseType == ETDDefenseType::ArtilleryTurret && ArtilleryTurretModelParts.IsValidIndex(10)) UpgradeMarker = ArtilleryTurretModelParts[10];
+	if (UpgradeMarker)
 	{
-		UStaticMeshComponent* UpgradePanel = TurretModelParts[5];
-		UpgradePanel->SetRelativeScale3D(FVector(0.84f + 0.07f * UpgradeLevel, 0.69f + 0.06f * UpgradeLevel, 0.16f));
-		UpgradePanel->SetRelativeLocation(FVector(-5.0f, 0.0f, 145.0f + 8.0f * UpgradeLevel));
-		if (UMaterialInstanceDynamic* DynamicMaterial = Cast<UMaterialInstanceDynamic>(UpgradePanel->GetMaterial(0)))
+		if (DefenseType == ETDDefenseType::Turret)
+		{
+			UpgradeMarker->SetRelativeScale3D(FVector(0.84f + 0.07f * UpgradeLevel, 0.69f + 0.06f * UpgradeLevel, 0.16f));
+			UpgradeMarker->SetRelativeLocation(FVector(-5.0f, 0.0f, 145.0f + 8.0f * UpgradeLevel));
+		}
+		else
+		{
+			UpgradeMarker->SetRelativeScale3D(UpgradeMarker->GetRelativeScale3D() * (1.0f + 0.12f * UpgradeLevel));
+		}
+		if (UMaterialInstanceDynamic* DynamicMaterial = Cast<UMaterialInstanceDynamic>(UpgradeMarker->GetMaterial(0)))
 		{
 			const FLinearColor TierColor = UpgradeLevel == 1
 				? FLinearColor(1.0f, 0.72f, 0.08f)
